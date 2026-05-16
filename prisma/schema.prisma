@@ -1,0 +1,342 @@
+// Halo-style personal blog: full CMS schema.
+// Default: SQLite (zero-config). Switch to PostgreSQL by changing the datasource
+// provider and DATABASE_URL — all schema features are portable.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// =====================
+// Auth: Users / Accounts / Sessions
+// =====================
+
+enum UserRole {
+  ADMIN
+  AUTHOR
+  GUEST
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  BANNED
+}
+
+model User {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  emailVerified DateTime?
+  name          String?
+  username      String?    @unique
+  passwordHash  String?
+  image         String?
+  bio           String?
+  role          UserRole   @default(GUEST)
+  status        UserStatus @default(ACTIVE)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+  articles Article[]
+  comments Comment[]
+  media    Media[]
+  coverStyles CoverStyle[]
+
+  @@index([role])
+  @@index([status])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// =====================
+// Content: Articles, Categories, Tags
+// =====================
+
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Article {
+  id           String        @id @default(cuid())
+  slug         String        @unique
+  title        String
+  summary      String?
+  contentMd    String
+  contentHtml  String?
+  coverImage   String?
+  coverStyleId String?
+  status       ArticleStatus @default(DRAFT)
+  authorId     String
+  categoryId   String?
+  viewCount    Int           @default(0)
+  readingTime  Int           @default(0)
+  featured     Boolean       @default(false)
+  allowComment Boolean       @default(true)
+  publishedAt  DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  author     User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  category   Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  coverStyle CoverStyle?  @relation(fields: [coverStyleId], references: [id], onDelete: SetNull)
+  tags       ArticleTag[]
+  comments   Comment[]
+  revisions  Revision[]
+
+  @@index([status, publishedAt])
+  @@index([authorId])
+  @@index([categoryId])
+  @@index([featured])
+}
+
+model Revision {
+  id        String   @id @default(cuid())
+  articleId String
+  title     String
+  contentMd String
+  summary   String?
+  createdAt DateTime @default(now())
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@index([articleId, createdAt])
+}
+
+model Category {
+  id           String     @id @default(cuid())
+  slug         String     @unique
+  name         String
+  description  String?
+  // JSON: { "<locale>": { "name": "...", "description": "..." } } — overrides per-locale.
+  translations String?
+  parentId     String?
+  position     Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  parent   Category?  @relation("CategoryParent", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryParent")
+  articles Article[]
+
+  @@index([parentId])
+}
+
+model Tag {
+  id           String       @id @default(cuid())
+  slug         String       @unique
+  name         String
+  // JSON: { "<locale>": { "name": "..." } } — per-locale display name.
+  translations String?
+  createdAt    DateTime     @default(now())
+
+  articles ArticleTag[]
+}
+
+model ArticleTag {
+  articleId String
+  tagId     String
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([articleId, tagId])
+  @@index([tagId])
+}
+
+// =====================
+// Comments
+// =====================
+
+enum CommentStatus {
+  PENDING
+  APPROVED
+  SPAM
+  TRASH
+}
+
+model Comment {
+  id            String        @id @default(cuid())
+  articleId     String
+  authorId      String?
+  authorName    String?
+  authorEmail   String?
+  authorWebsite String?
+  content       String
+  contentHtml   String?
+  status        CommentStatus @default(APPROVED)
+  parentId      String?
+  ipHash        String?
+  userAgent     String?
+  createdAt     DateTime      @default(now())
+
+  article Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  author  User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
+
+  @@index([articleId, status, createdAt])
+  @@index([parentId])
+  @@index([authorId])
+}
+
+// =====================
+// Custom pages & navigation
+// =====================
+
+enum PageType {
+  MARKDOWN
+  HTML
+}
+
+model Page {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String?
+  contentType PageType @default(MARKDOWN)
+  content     String
+  contentHtml String?
+  published   Boolean  @default(true)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model NavItem {
+  id       String  @id @default(cuid())
+  label    String
+  href     String
+  position Int     @default(0)
+  external Boolean @default(false)
+  icon     String?
+  parentId String?
+
+  parent   NavItem?  @relation("NavItemParent", fields: [parentId], references: [id], onDelete: Cascade)
+  children NavItem[] @relation("NavItemParent")
+
+  @@index([parentId])
+  @@index([position])
+}
+
+// =====================
+// Settings & AI providers
+// =====================
+
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+enum AIProviderKind {
+  LLM
+  IMAGE
+}
+
+model AIProvider {
+  id        String         @id @default(cuid())
+  name      String
+  kind      AIProviderKind
+  baseUrl   String
+  model     String
+  apiKeyEnc String
+  extra     String?
+  isDefault Boolean        @default(false)
+  enabled   Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([kind, enabled])
+}
+
+// =====================
+// Cover image generation
+// =====================
+
+enum CoverKind {
+  API
+  TEMPLATE
+  CODE
+}
+
+model CoverStyle {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  kind        CoverKind
+  source      String
+  config      String?
+  preview     String?
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  articles  Article[]
+
+  @@index([kind])
+}
+
+// =====================
+// Media uploads
+// =====================
+
+model Media {
+  id         String   @id @default(cuid())
+  filename   String
+  mimeType   String
+  size       Int
+  path       String
+  width      Int?
+  height     Int?
+  uploaderId String?
+  createdAt  DateTime @default(now())
+
+  uploader User? @relation(fields: [uploaderId], references: [id], onDelete: SetNull)
+
+  @@index([uploaderId])
+}
