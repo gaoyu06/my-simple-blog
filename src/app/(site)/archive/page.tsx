@@ -44,7 +44,23 @@ export default async function ArchivePage({
         <ul className="flex flex-col divide-y divide-[var(--color-border)]">
           {articles.map((article) => (
             <li key={article.id} className="group py-6">
-              <div className="flex items-baseline justify-between gap-6">
+              <div className="flex items-center gap-5">
+                {article.coverImage ? (
+                  <Link
+                    href={`/articles/${article.slug}`}
+                    className="block aspect-[4/3] w-24 shrink-0 overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-muted)] sm:w-28"
+                    aria-hidden="true"
+                    tabIndex={-1}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={article.coverImage}
+                      alt=""
+                      loading="lazy"
+                      className="h-full w-full object-cover transition-transform duration-500 ease-[var(--ease-out-soft)] group-hover:scale-[1.03]"
+                    />
+                  </Link>
+                ) : null}
                 <div className="min-w-0 flex-1">
                   <div className="mb-1.5 flex items-center gap-2">
                     {article.category ? (
