@@ -55,19 +55,24 @@ export function AIProviderForm({
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setPending(true);
-    const result = await saveProvider({ ...data, apiKey });
-    setPending(false);
-    if (!result.ok) {
-      toast.error(result.error);
-      return;
+    try {
+      const result = await saveProvider({ ...data, apiKey });
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success(t("common.saved"));
+      if (!initial) {
+        setData(DEFAULT);
+        setApiKey("");
+      }
+      onSaved?.();
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+    } finally {
+      setPending(false);
     }
-    toast.success(t("common.saved"));
-    if (!initial) {
-      setData(DEFAULT);
-      setApiKey("");
-    }
-    onSaved?.();
-    router.refresh();
   }
 
   return (

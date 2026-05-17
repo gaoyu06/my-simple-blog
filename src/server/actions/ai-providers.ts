@@ -27,40 +27,44 @@ export async function saveProvider(input: unknown) {
   if (!parsed.success) return { ok: false as const, error: "Validation failed." };
   const data = parsed.data;
 
-  if (data.isDefault) {
-    await db.aIProvider.updateMany({ where: { kind: data.kind, isDefault: true }, data: { isDefault: false } });
-  }
+  try {
+    if (data.isDefault) {
+      await db.aIProvider.updateMany({ where: { kind: data.kind, isDefault: true }, data: { isDefault: false } });
+    }
 
-  if (data.id) {
-    const existing = await db.aIProvider.findUnique({ where: { id: data.id } });
-    if (!existing) return { ok: false as const, error: "Not found." };
-    await db.aIProvider.update({
-      where: { id: data.id },
-      data: {
-        name: data.name,
-        kind: data.kind,
-        baseUrl: data.baseUrl,
-        model: data.model,
-        apiKeyEnc: data.apiKey ? encryptSecret(data.apiKey) : existing.apiKeyEnc,
-        isDefault: data.isDefault,
-        enabled: data.enabled,
-        extra: data.extra ?? null,
-      },
-    });
-  } else {
-    if (!data.apiKey) return { ok: false as const, error: "API key is required for new providers." };
-    await db.aIProvider.create({
-      data: {
-        name: data.name,
-        kind: data.kind,
-        baseUrl: data.baseUrl,
-        model: data.model,
-        apiKeyEnc: encryptSecret(data.apiKey),
-        isDefault: data.isDefault,
-        enabled: data.enabled,
-        extra: data.extra ?? null,
-      },
-    });
+    if (data.id) {
+      const existing = await db.aIProvider.findUnique({ where: { id: data.id } });
+      if (!existing) return { ok: false as const, error: "Not found." };
+      await db.aIProvider.update({
+        where: { id: data.id },
+        data: {
+          name: data.name,
+          kind: data.kind,
+          baseUrl: data.baseUrl,
+          model: data.model,
+          apiKeyEnc: data.apiKey ? encryptSecret(data.apiKey) : existing.apiKeyEnc,
+          isDefault: data.isDefault,
+          enabled: data.enabled,
+          extra: data.extra ?? null,
+        },
+      });
+    } else {
+      if (!data.apiKey) return { ok: false as const, error: "API key is required for new providers." };
+      await db.aIProvider.create({
+        data: {
+          name: data.name,
+          kind: data.kind,
+          baseUrl: data.baseUrl,
+          model: data.model,
+          apiKeyEnc: encryptSecret(data.apiKey),
+          isDefault: data.isDefault,
+          enabled: data.enabled,
+          extra: data.extra ?? null,
+        },
+      });
+    }
+  } catch (err) {
+    return { ok: false as const, error: err instanceof Error ? err.message : "Internal error" };
   }
 
   revalidatePath("/admin/ai");
