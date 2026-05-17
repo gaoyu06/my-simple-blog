@@ -13,10 +13,16 @@ const tagsSchema = z.array(z.string().min(1).max(40)).max(20);
 const upsertSchema = z.object({
   id: z.string().optional(),
   title: z.string().min(1, "Title is required").max(200),
-  slug: z.string().min(1).max(200).regex(/^[a-z0-9-]+$/, "Slug must be lowercase letters, digits and dashes").optional(),
+  slug: z.string().min(1).max(200).regex(/^[A-Za-z0-9_-]+$/, "Slug may only contain letters, digits, '-' and '_'").optional(),
   summary: z.string().max(500).optional().nullable(),
   contentMd: z.string().default(""),
-  coverImage: z.string().url().optional().nullable().or(z.literal("").transform(() => null)),
+  coverImage: z
+    .string()
+    .max(2048)
+    .regex(/^(https?:\/\/|\/)/, "Must be an absolute URL or a path starting with '/'")
+    .optional()
+    .nullable()
+    .or(z.literal("").transform(() => null)),
   coverStyleId: z.string().optional().nullable(),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).default("DRAFT"),
   categoryId: z.string().optional().nullable(),
