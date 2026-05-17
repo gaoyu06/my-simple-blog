@@ -1,15 +1,23 @@
-import "server-only";
+import { redirect } from "next/navigation";
+import { SetupWizard } from "@/components/setup/setup-wizard";
+import { isInitialized } from "@/lib/install-state";
+import { detectDbKind, redactedDbUrl, DB_KIND_LABEL } from "@/lib/db-info";
+import { DEFAULT_LOCALE } from "@/lib/i18n";
+import { db } from "@/lib/db";
 
-export type DbKind = "sqlite" | "postgresql" | "unknown";
+export default async function SetupPage() {
+  if (await isInitialized()) redirect("/");
 
-export function detectDbKind(url = process.env.DATABASE_URL ?? ""): DbKind {
-  if (/^postgres(ql)?:\/\//i.test(url)) return "postgresql";
-  if (/^file:/i.test(url) || /\.db(\?|$)/i.test(url)) return "sqlite";
-  return "unknown";
-}
+  const adminCount = await db.user
+    .count({ where: { role: "ADMIN" } })
+    .catch(() => 0);
+  const kind = detectDbKind();
 
-/** Friendly redacted DATABASE_URL — strip password before showing in UI. */
-export function redactedDbUrl(url = process.env.DATABASE_URL ?? ""): string {
-  if (!url) return "";
-  return url.replace(/(:\/\/[^:@/]+:)([^@]+)(@)/, (_, a, _b, c) => `${a}••••${c}`);
+  return (
+    <SetupWizard
+      needsAdmin={adminCount === 0}
+      defaultLocale={DEFAULT_LOCALE}
+      db={{ label: DB_KIND_LABEL[kind], url: redactedDbUrl() }}
+    />
+  );
 }
