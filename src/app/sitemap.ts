@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 import { db } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = process.env.APP_URL ?? "http://localhost:3000";
   const [articles, categories, tags, pages] = await Promise.all([

@@ -1,13 +1,11 @@
 // Halo-style personal blog: full CMS schema.
-// Default: SQLite (zero-config). Switch to PostgreSQL by changing the datasource
-// provider and DATABASE_URL — all schema features are portable.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 // =====================
