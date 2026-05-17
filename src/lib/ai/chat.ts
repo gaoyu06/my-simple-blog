@@ -10,6 +10,7 @@ export interface ChatOptions {
   temperature?: number;
   maxTokens?: number;
   providerId?: string | null;
+  json?: boolean;
 }
 
 export async function chat(messages: ChatMessage[], options: ChatOptions = {}): Promise<string> {
@@ -21,6 +22,7 @@ export async function chat(messages: ChatMessage[], options: ChatOptions = {}): 
     messages,
     temperature: options.temperature ?? 0.6,
     max_tokens: options.maxTokens,
+    ...(options.json ? { response_format: { type: "json_object" as const } } : {}),
   });
   return completion.choices[0]?.message?.content ?? "";
 }

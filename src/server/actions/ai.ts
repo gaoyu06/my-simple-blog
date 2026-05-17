@@ -47,12 +47,30 @@ const grammarSchema = z.object({
 
 export type GrammarIssue = z.infer<typeof grammarIssue>;
 
+function extractJsonObject(raw: string): unknown {
+  const cleaned = raw.replace(/```json|```/g, "").trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    // Some providers ignore response_format and wrap JSON in prose. Pull out
+    // the first {...} block and try again.
+    const first = cleaned.indexOf("{");
+    const last = cleaned.lastIndexOf("}");
+    if (first >= 0 && last > first) {
+      return JSON.parse(cleaned.slice(first, last + 1));
+    }
+    throw new Error("Response was not valid JSON");
+  }
+}
+
 export async function checkGrammar(content: string): Promise<AIResult<GrammarIssue[]>> {
   const session = await auth();
   if (!canWriteArticles(session)) return { ok: false, error: "Not authorized." };
   if (!content.trim()) return { ok: true, data: [] };
+
+  let raw = "";
   try {
-    const raw = await chat(
+    raw = await chat(
       [
         {
           role: "system",
@@ -60,21 +78,32 @@ export async function checkGrammar(content: string): Promise<AIResult<GrammarIss
             "You are an editorial proofreader.",
             'Return a JSON object with exactly this shape: {"issues":[{"type":"grammar"|"spelling"|"clarity"|"style","message":"...","snippet":"exact substring from the input","suggestion":"..."}]}.',
             "The snippet MUST be a verbatim contiguous substring of the input — case and punctuation preserved — so it can be highlighted by string match.",
+            "Escape every double-quote, backslash and newline inside string values so the output is strictly valid JSON.",
             "Be conservative. Report at most 20 of the most important issues. If nothing is wrong, return an empty issues array.",
             "Do not include any prose outside the JSON object.",
           ].join(" "),
         },
         { role: "user", content: content.slice(0, 16000) },
       ],
-      { temperature: 0, maxTokens: 1500 },
+      { temperature: 0, maxTokens: 2000, json: true },
     );
-
-    const cleaned = raw.replace(/```json|```/g, "").trim();
-    const parsed = grammarSchema.safeParse(JSON.parse(cleaned));
-    if (!parsed.success) return { ok: false, error: "Could not parse grammar response." };
-    const valid = parsed.data.issues.filter((i) => content.includes(i.snippet));
-    return { ok: true, data: valid };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "AI request failed." };
   }
+
+  let payload: unknown;
+  try {
+    payload = extractJsonObject(raw);
+  } catch (e) {
+    const snippet = raw.slice(0, 160).replace(/\s+/g, " ");
+    return {
+      ok: false,
+      error: `${e instanceof Error ? e.message : "Parse failed"} — model said: ${snippet}${raw.length > 160 ? "…" : ""}`,
+    };
+  }
+
+  const parsed = grammarSchema.safeParse(payload);
+  if (!parsed.success) return { ok: false, error: "Grammar response had the wrong shape." };
+  const valid = parsed.data.issues.filter((i) => content.includes(i.snippet));
+  return { ok: true, data: valid };
 }
