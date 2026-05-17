@@ -293,6 +293,21 @@ export const en = {
   "account.profile": "Profile",
   "account.aria": "Account",
 
+  // account / profile page
+  "account.eyebrow": "Account",
+  "account.title": "Your profile",
+  "account.joined": "Joined {date}",
+  "account.role.admin": "Administrator",
+  "account.role.author": "Author",
+  "account.role.guest": "Guest",
+  "account.field.name": "Display name",
+  "account.field.namePlaceholder": "How your name appears on posts",
+  "account.field.username": "Username",
+  "account.field.usernamePlaceholder": "Optional handle (letters, digits, '-', '_')",
+  "account.field.image": "Avatar URL",
+  "account.field.bio": "Bio",
+  "account.field.bioPlaceholder": "A short line about you",
+
   // home
   "home.eyebrow": "{name} · Personal blog",
   "home.hero.titleA": "A quiet place for",
@@ -743,6 +758,20 @@ export const zh: Record<DictKey, string> = {
   "account.dashboard": "后台",
   "account.profile": "个人资料",
   "account.aria": "账户",
+
+  "account.eyebrow": "账户",
+  "account.title": "个人资料",
+  "account.joined": "加入于 {date}",
+  "account.role.admin": "管理员",
+  "account.role.author": "作者",
+  "account.role.guest": "访客",
+  "account.field.name": "显示名称",
+  "account.field.namePlaceholder": "在文章上展示的名字",
+  "account.field.username": "用户名",
+  "account.field.usernamePlaceholder": "可选 handle（字母、数字、'-'、'_'）",
+  "account.field.image": "头像 URL",
+  "account.field.bio": "简介",
+  "account.field.bioPlaceholder": "一句话介绍自己",
 
   "home.eyebrow": "{name} · 个人博客",
   "home.hero.titleA": "为长文",
