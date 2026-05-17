@@ -138,7 +138,23 @@ export default async function HomePage() {
           ) : (
             <div className="grid gap-5 sm:grid-cols-2">
               {articles.map((article, idx) => (
-                <Card key={article.id} className={`rise rise-${Math.min(idx + 2, 6)}`}>
+                <Card key={article.id} className={`overflow-hidden rise rise-${Math.min(idx + 2, 6)}`}>
+                  {article.coverImage ? (
+                    <Link
+                      href={`/articles/${article.slug}`}
+                      className="block aspect-[16/9] overflow-hidden bg-[var(--color-muted)]"
+                      aria-hidden="true"
+                      tabIndex={-1}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={article.coverImage}
+                        alt=""
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-500 ease-[var(--ease-out-soft)] group-hover/card:scale-[1.02]"
+                      />
+                    </Link>
+                  ) : null}
                   <CardHeader>
                     <div className="flex items-center gap-2">
                       {article.category ? (
