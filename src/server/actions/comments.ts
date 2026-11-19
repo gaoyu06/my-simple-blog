@@ -84,7 +84,7 @@ export async function postComment(input: unknown): Promise<CommentResult> {
 
   const needsApproval = policy.needsApproval && session?.user?.role !== "ADMIN";
 
-  const html = await renderMarkdown(data.content);
+  const html = await renderMarkdown(data.content, { allowHtml: false });
   const safeHtml = sanitizeCommentHtml(html);
 
   const comment = await db.comment.create({
@@ -103,7 +103,7 @@ export async function postComment(input: unknown): Promise<CommentResult> {
     },
   });
 
-  revalidatePath(`/articles/${article.slug}`);
+  revalidatePath("/", "layout");
   return { ok: true, commentId: comment.id, pending: needsApproval };
 }
 
@@ -122,7 +122,7 @@ export async function deleteComment(id: string): Promise<{ ok: true } | { ok: fa
     return { ok: false, error: "Not authorized." };
   }
   await db.comment.delete({ where: { id } });
-  revalidatePath(`/articles/${comment.article.slug}`);
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
@@ -141,6 +141,6 @@ export async function moderateComment(
   const isPostAuthor = session.user.id === comment.article.authorId;
   if (!isAdmin && !isPostAuthor) return { ok: false, error: "Not authorized." };
   await db.comment.update({ where: { id }, data: { status } });
-  revalidatePath(`/articles/${comment.article.slug}`);
+  revalidatePath("/", "layout");
   return { ok: true };
 }

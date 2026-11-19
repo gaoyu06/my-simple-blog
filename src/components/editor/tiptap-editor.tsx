@@ -1,7 +1,10 @@
 "use client";
 
+import { toast } from "sonner";
+
 import * as React from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
+import { Slice } from "@tiptap/pm/model";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
@@ -67,7 +70,7 @@ export const TiptapEditor = React.forwardRef<TiptapEditorHandle, TiptapEditorPro
           HTMLAttributes: { rel: "noopener noreferrer nofollow ugc", target: "_blank" },
         }),
         Image.configure({ inline: false, allowBase64: false }),
-        Placeholder.configure({ placeholder: placeholder ?? "Start writing…" }),
+        Placeholder.configure({ placeholder: placeholder ?? "开始写作…" }),
         Typography,
         CodeBlockLowlight.configure({ lowlight }),
         TaskList,
@@ -102,7 +105,16 @@ export const TiptapEditor = React.forwardRef<TiptapEditorHandle, TiptapEditorPro
       ref,
       () => ({
         insertAtCursor: (text: string) => {
-          editor?.chain().focus().insertContent(text).run();
+          if (!editor || !text) return;
+          const markdown = editor.storage as unknown as {
+            markdown: { parser: { parse(value: string): { content: Slice["content"] } } };
+          };
+          const parsed = markdown.markdown.parser.parse(text);
+          editor.view.dispatch(
+            editor.state.tr
+              .replaceSelection(new Slice(parsed.content, 0, 0))
+              .scrollIntoView(),
+          );
         },
         getSelection: () => {
           if (!editor) return "";
@@ -188,43 +200,44 @@ function Divider() {
 }
 
 function Toolbar({ editor }: { editor: EditorType }) {
+  const imageInput = React.useRef<HTMLInputElement>(null);
   const promptUrl = (current?: string) => {
     if (typeof window === "undefined") return null;
-    return window.prompt("Enter URL", current ?? "https://") ?? null;
+    return window.prompt("链接地址", current ?? "https://") ?? null;
   };
 
   return (
     <div className="flex flex-wrap items-center gap-0.5 border-b border-[var(--color-border)] px-2 py-1.5">
-      <ToolbarButton label="Undo" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()}>
+      <ToolbarButton label="撤销" onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()}>
         <Undo className="h-4 w-4" aria-hidden />
       </ToolbarButton>
-      <ToolbarButton label="Redo" onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()}>
+      <ToolbarButton label="重做" onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()}>
         <Redo className="h-4 w-4" aria-hidden />
       </ToolbarButton>
       <Divider />
       <ToolbarButton
-        label="Paragraph"
+        label="正文"
         active={editor.isActive("paragraph")}
         onClick={() => editor.chain().focus().setParagraph().run()}
       >
         <Pilcrow className="h-4 w-4" aria-hidden />
       </ToolbarButton>
       <ToolbarButton
-        label="Heading 1"
+        label="标题 1"
         active={editor.isActive("heading", { level: 1 })}
         onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
       >
         <Heading1 className="h-4 w-4" aria-hidden />
       </ToolbarButton>
       <ToolbarButton
-        label="Heading 2"
+        label="标题 2"
         active={editor.isActive("heading", { level: 2 })}
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
       >
         <Heading2 className="h-4 w-4" aria-hidden />
       </ToolbarButton>
       <ToolbarButton
-        label="Heading 3"
+        label="标题 3"
         active={editor.isActive("heading", { level: 3 })}
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
       >
@@ -232,28 +245,28 @@ function Toolbar({ editor }: { editor: EditorType }) {
       </ToolbarButton>
       <Divider />
       <ToolbarButton
-        label="Bold"
+        label="加粗"
         active={editor.isActive("bold")}
         onClick={() => editor.chain().focus().toggleBold().run()}
       >
         <Bold className="h-4 w-4" aria-hidden />
       </ToolbarButton>
       <ToolbarButton
-        label="Italic"
+        label="斜体"
         active={editor.isActive("italic")}
         onClick={() => editor.chain().focus().toggleItalic().run()}
       >
         <Italic className="h-4 w-4" aria-hidden />
       </ToolbarButton>
       <ToolbarButton
-        label="Strike"
+        label="删除线"
         active={editor.isActive("strike")}
         onClick={() => editor.chain().focus().toggleStrike().run()}
       >
         <Strikethrough className="h-4 w-4" aria-hidden />
       </ToolbarButton>
       <ToolbarButton
-        label="Inline code"
+        label="行内代码"
         active={editor.isActive("code")}
         onClick={() => editor.chain().focus().toggleCode().run()}
       >
@@ -261,46 +274,46 @@ function Toolbar({ editor }: { editor: EditorType }) {
       </ToolbarButton>
       <Divider />
       <ToolbarButton
-        label="Bullet list"
+        label="无序列表"
         active={editor.isActive("bulletList")}
         onClick={() => editor.chain().focus().toggleBulletList().run()}
       >
         <List className="h-4 w-4" aria-hidden />
       </ToolbarButton>
       <ToolbarButton
-        label="Ordered list"
+        label="有序列表"
         active={editor.isActive("orderedList")}
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
       >
         <ListOrdered className="h-4 w-4" aria-hidden />
       </ToolbarButton>
       <ToolbarButton
-        label="Task list"
+        label="任务列表"
         active={editor.isActive("taskList")}
         onClick={() => editor.chain().focus().toggleTaskList().run()}
       >
         <ListChecks className="h-4 w-4" aria-hidden />
       </ToolbarButton>
       <ToolbarButton
-        label="Quote"
+        label="引用"
         active={editor.isActive("blockquote")}
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
       >
         <Quote className="h-4 w-4" aria-hidden />
       </ToolbarButton>
       <ToolbarButton
-        label="Code block"
+        label="代码块"
         active={editor.isActive("codeBlock")}
         onClick={() => editor.chain().focus().toggleCodeBlock().run()}
       >
         <CodeIcon className="h-4 w-4" aria-hidden />
       </ToolbarButton>
-      <ToolbarButton label="Divider" onClick={() => editor.chain().focus().setHorizontalRule().run()}>
+      <ToolbarButton label="分隔线" onClick={() => editor.chain().focus().setHorizontalRule().run()}>
         <Minus className="h-4 w-4" aria-hidden />
       </ToolbarButton>
       <Divider />
       <ToolbarButton
-        label="Link"
+        label="链接"
         active={editor.isActive("link")}
         onClick={() => {
           const url = promptUrl(editor.getAttributes("link").href as string | undefined);
@@ -311,15 +324,26 @@ function Toolbar({ editor }: { editor: EditorType }) {
       >
         <LinkIcon className="h-4 w-4" aria-hidden />
       </ToolbarButton>
-      <ToolbarButton
-        label="Image"
-        onClick={() => {
-          const url = promptUrl();
-          if (url) editor.chain().focus().setImage({ src: url }).run();
-        }}
-      >
+      <ToolbarButton label="插入图片" onClick={() => imageInput.current?.click()}>
         <ImageIcon className="h-4 w-4" aria-hidden />
       </ToolbarButton>
+      <input
+        ref={imageInput}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (!file) return;
+          const body = new FormData();
+          body.append("file", file);
+          const res = await fetch("/api/uploads", { method: "POST", body });
+          const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+          if (res.ok && data.url) editor.chain().focus().setImage({ src: data.url, alt: file.name }).run();
+          else toast.error(data.error ?? `图片上传失败（${res.status}）`);
+        }}
+      />
     </div>
   );
 }
