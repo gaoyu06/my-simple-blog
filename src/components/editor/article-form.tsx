@@ -11,7 +11,6 @@ import {
   SpellCheck,
   X,
   Settings2,
-  Image as ImageIcon,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -37,6 +36,7 @@ import {
 } from "@/components/ui/dialog";
 import { TiptapEditor, type TiptapEditorHandle } from "@/components/editor/tiptap-editor";
 import { TagsInput } from "@/components/editor/tags-input";
+import { CoverField } from "@/components/editor/cover-field";
 import { AiChatPanel } from "@/components/editor/ai-chat-panel";
 import type { GrammarHint } from "@/components/editor/grammar-extension";
 import { useT } from "@/components/i18n-provider";
@@ -57,7 +57,6 @@ export interface ArticleFormInitial {
   categoryId: string | null;
   tags: string[];
   coverImage: string | null;
-  coverStyleId: string | null;
   featured: boolean;
   allowComment: boolean;
 }
@@ -65,7 +64,6 @@ export interface ArticleFormInitial {
 export interface ArticleFormProps {
   initial: ArticleFormInitial;
   categories: Array<{ id: string; name: string; slug: string; translations: string | null }>;
-  coverStyles: Array<{ id: string; name: string }>;
 }
 
 const STATUS_TONE: Record<ArticleStatus, string> = {
@@ -74,7 +72,7 @@ const STATUS_TONE: Record<ArticleStatus, string> = {
   DRAFT: "text-[var(--color-warning)]",
 };
 
-export function ArticleForm({ initial, categories, coverStyles }: ArticleFormProps) {
+export function ArticleForm({ initial, categories }: ArticleFormProps) {
   const router = useRouter();
   const { t, locale } = useT();
   const editorRef = React.useRef<TiptapEditorHandle | null>(null);
@@ -87,20 +85,14 @@ export function ArticleForm({ initial, categories, coverStyles }: ArticleFormPro
   const [categoryId, setCategoryId] = React.useState<string | null>(initial.categoryId);
   const [tags, setTags] = React.useState<string[]>(initial.tags);
   const [coverImage, setCoverImage] = React.useState(initial.coverImage ?? "");
-  const [coverStyleId, setCoverStyleId] = React.useState<string | null>(initial.coverStyleId);
   const [featured, setFeatured] = React.useState(initial.featured);
   const [allowComment, setAllowComment] = React.useState(initial.allowComment);
   const [saving, setSaving] = React.useState(false);
   const [summarizing, setSummarizing] = React.useState(false);
   const [checking, setChecking] = React.useState(false);
-  const [generatingCover, setGeneratingCover] = React.useState(false);
   const [grammarIssues, setGrammarIssues] = React.useState<GrammarHint[]>([]);
   const [aiOpen, setAiOpen] = React.useState(true);
   const [settingsOpen, setSettingsOpen] = React.useState(false);
-
-  React.useEffect(() => {
-    if (!slugTouched) setSlug(makeSlug(title));
-  }, [title, slugTouched]);
 
   async function onSave(targetStatus?: ArticleStatus) {
     setSaving(true);
@@ -114,7 +106,6 @@ export function ArticleForm({ initial, categories, coverStyles }: ArticleFormPro
       categoryId: categoryId ?? null,
       tags,
       coverImage: coverImage || null,
-      coverStyleId: coverStyleId ?? null,
       featured,
       allowComment,
     };
@@ -179,36 +170,6 @@ export function ArticleForm({ initial, categories, coverStyles }: ArticleFormPro
   function dismissGrammar() {
     setGrammarIssues([]);
     editorRef.current?.clearGrammarHints();
-  }
-
-  async function onGenerateCover() {
-    if (!initial.id || !coverStyleId) return;
-    setGeneratingCover(true);
-    try {
-      const response = await fetch("/api/cover/generate", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          styleId: coverStyleId,
-          title: title || "Untitled",
-          summary,
-          articleId: initial.id,
-        }),
-      });
-      if (!response.ok) {
-        toast.error(t("editor.toast.coverFailed"));
-        return;
-      }
-      const data = (await response.json()) as { url?: string; error?: string };
-      if (data.url) {
-        setCoverImage(data.url);
-        toast.success(t("editor.toast.coverGenerated"));
-      } else {
-        toast.error(data.error ?? t("editor.toast.coverFailed"));
-      }
-    } finally {
-      setGeneratingCover(false);
-    }
   }
 
   function buildContextSystemPrompt() {
@@ -289,7 +250,10 @@ export function ArticleForm({ initial, categories, coverStyles }: ArticleFormPro
           <div className="mx-auto flex max-w-3xl flex-col gap-4 px-8 py-8">
             <Input
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                if (!slugTouched) setSlug(makeSlug(e.target.value));
+              }}
               placeholder={t("editor.titlePlaceholder")}
               className="h-auto border-0 bg-transparent px-0 py-2 text-4xl font-serif font-medium tracking-tight shadow-none focus-visible:shadow-none"
             />
@@ -450,51 +414,7 @@ export function ArticleForm({ initial, categories, coverStyles }: ArticleFormPro
               </div>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="cover">{t("editor.settings.cover")}</Label>
-              <Input
-                id="cover"
-                value={coverImage}
-                onChange={(e) => setCoverImage(e.target.value)}
-                placeholder={t("editor.settings.coverPlaceholder")}
-              />
-              {coverStyles.length > 0 ? (
-                <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_auto]">
-                  <Select
-                    value={coverStyleId ?? "__none"}
-                    onValueChange={(v) => setCoverStyleId(v === "__none" ? null : v)}
-                  >
-                    <SelectTrigger id="coverStyle">
-                      <SelectValue placeholder={t("editor.settings.coverStyle")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none">{t("editor.settings.categoryNone")}</SelectItem>
-                      {coverStyles.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={!initial.id || !coverStyleId}
-                    loading={generatingCover}
-                    onClick={onGenerateCover}
-                    leftIcon={<ImageIcon className="h-3.5 w-3.5" />}
-                  >
-                    {t("editor.settings.coverGenerate")}
-                  </Button>
-                </div>
-              ) : null}
-              {!initial.id ? (
-                <p className="text-xs text-[var(--color-foreground-subtle)]">
-                  {t("editor.settings.coverStyleAuto")}
-                </p>
-              ) : null}
-            </div>
+            <CoverField value={coverImage} onChange={setCoverImage} />
 
             <fieldset className="flex flex-col gap-2 rounded-[var(--radius-md)] bg-[var(--color-surface)] p-3 shadow-[inset_0_0_0_1px_var(--color-border)]">
               <legend className="px-1 font-mono text-[10px] uppercase tracking-[0.15em] text-[var(--color-foreground-muted)]">

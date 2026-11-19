@@ -1,16 +1,13 @@
 import { db } from "@/lib/db";
 import { ArticleForm } from "@/components/editor/article-form";
 
-export const metadata = { title: "New article" };
+export const metadata = { title: "写文章" };
 
 export default async function NewArticlePage() {
-  const [categories, coverStyles] = await Promise.all([
-    db.category.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true, slug: true, translations: true },
-    }),
-    db.coverStyle.findMany({ orderBy: { createdAt: "asc" }, select: { id: true, name: true } }),
-  ]);
+  const categories = await db.category.findMany({
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, slug: true, translations: true },
+  });
 
   return (
     <ArticleForm
@@ -23,12 +20,10 @@ export default async function NewArticlePage() {
         categoryId: null,
         tags: [],
         coverImage: null,
-        coverStyleId: null,
         featured: false,
         allowComment: true,
       }}
       categories={categories}
-      coverStyles={coverStyles}
     />
   );
 }

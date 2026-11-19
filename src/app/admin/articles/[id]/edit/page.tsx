@@ -5,13 +5,13 @@ import { db } from "@/lib/db";
 import { canEditArticle } from "@/lib/permissions";
 import { ArticleForm } from "@/components/editor/article-form";
 
-export const metadata = { title: "Edit article" };
+export const metadata = { title: "编辑文章" };
 
 export default async function EditArticlePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await auth();
 
-  const [article, categories, coverStyles] = await Promise.all([
+  const [article, categories] = await Promise.all([
     db.article.findUnique({
       where: { id },
       include: { tags: { include: { tag: true } } },
@@ -20,7 +20,6 @@ export default async function EditArticlePage({ params }: { params: Promise<{ id
       orderBy: { name: "asc" },
       select: { id: true, name: true, slug: true, translations: true },
     }),
-    db.coverStyle.findMany({ orderBy: { createdAt: "asc" }, select: { id: true, name: true } }),
   ]);
 
   if (!article) notFound();
@@ -38,12 +37,10 @@ export default async function EditArticlePage({ params }: { params: Promise<{ id
         categoryId: article.categoryId,
         tags: article.tags.map((t) => t.tag.name),
         coverImage: article.coverImage,
-        coverStyleId: article.coverStyleId,
         featured: article.featured,
         allowComment: article.allowComment,
       }}
       categories={categories}
-      coverStyles={coverStyles}
     />
   );
 }

@@ -72,55 +72,14 @@ async function seedNav() {
   const count = await db.navItem.count();
   if (count > 0) return;
   const items = [
-    { label: "Home", href: "/", position: 0 },
-    { label: "Archive", href: "/archive", position: 1 },
-    { label: "Categories", href: "/categories", position: 2 },
-    { label: "Tags", href: "/tags", position: 3 },
+    { label: "首页", href: "/", position: 0 },
+    { label: "文章", href: "/archive", position: 1 },
+    { label: "分类", href: "/categories", position: 2 },
+    { label: "标签", href: "/tags", position: 3 },
   ];
   for (const item of items) {
     await db.navItem.create({ data: item });
   }
-}
-
-async function seedCoverStyles() {
-  const count = await db.coverStyle.count();
-  if (count > 0) return;
-
-  await db.coverStyle.create({
-    data: {
-      name: "Minimal Gradient",
-      description: "Clean gradient with title and subtitle.",
-      kind: "TEMPLATE",
-      source: JSON.stringify({
-        kind: "satori",
-        template: "minimal-gradient",
-      }),
-      config: JSON.stringify({
-        width: 1200,
-        height: 630,
-        gradientFrom: "oklch(0.62 0.18 250)",
-        gradientTo: "oklch(0.45 0.20 280)",
-      }),
-    },
-  });
-
-  await db.coverStyle.create({
-    data: {
-      name: "Editorial",
-      description: "Magazine-style cover with large serif title.",
-      kind: "TEMPLATE",
-      source: JSON.stringify({
-        kind: "satori",
-        template: "editorial",
-      }),
-      config: JSON.stringify({
-        width: 1200,
-        height: 630,
-        background: "oklch(0.18 0.02 250)",
-        textColor: "oklch(0.95 0.01 90)",
-      }),
-    },
-  });
 }
 
 async function seedWelcomePost() {
@@ -134,7 +93,7 @@ async function seedWelcomePost() {
 ## What you can do
 
 - Write articles in Markdown or with the rich-text editor.
-- Generate covers with AI or HTML templates.
+- Upload a cover image in the editor.
 - Use the LLM panel to brainstorm or check your grammar.
 - Customize the top nav, theme, and add custom pages.
 
@@ -160,7 +119,6 @@ async function main() {
   await seedAdmin();
   await seedCategories();
   await seedNav();
-  await seedCoverStyles();
   await seedWelcomePost();
   console.log("Seed complete.");
 }

@@ -43,7 +43,6 @@ model User {
   articles Article[]
   comments Comment[]
   media    Media[]
-  coverStyles CoverStyle[]
 
   @@index([role])
   @@index([status])
@@ -106,7 +105,6 @@ model Article {
   contentMd    String
   contentHtml  String?
   coverImage   String?
-  coverStyleId String?
   status       ArticleStatus @default(DRAFT)
   authorId     String
   categoryId   String?
@@ -120,7 +118,6 @@ model Article {
 
   author     User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
   category   Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  coverStyle CoverStyle?  @relation(fields: [coverStyleId], references: [id], onDelete: SetNull)
   tags       ArticleTag[]
   comments   Comment[]
   revisions  Revision[]
@@ -292,32 +289,10 @@ model AIProvider {
 }
 
 // =====================
-// Cover image generation
+
 // =====================
 
-enum CoverKind {
-  API
-  TEMPLATE
-  CODE
-}
 
-model CoverStyle {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  kind        CoverKind
-  source      String
-  config      String?
-  preview     String?
-  createdById String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  createdBy User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
-  articles  Article[]
-
-  @@index([kind])
-}
 
 // =====================
 // Media uploads
