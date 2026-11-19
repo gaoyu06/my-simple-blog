@@ -1,15 +1,14 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+
 import { z } from "zod";
 import bcrypt from "bcryptjs";
-import { cookies } from "next/headers";
 
 import { db } from "@/lib/db";
 import { signIn } from "@/lib/auth";
 import { setSetting } from "@/lib/settings";
 import { SETTINGS } from "@/lib/settings-keys";
-import { COLOR_THEME_COOKIE, isColorTheme } from "@/lib/color-theme";
-import { LOCALE_COOKIE, isLocale } from "@/lib/i18n";
 import { encryptSecret } from "@/lib/crypto";
 import { isInitialized } from "@/lib/install-state";
 
@@ -103,10 +102,10 @@ export async function completeSetup(input: unknown): Promise<SetupResult> {
   if (navCount === 0) {
     await db.navItem.createMany({
       data: [
-        { label: "Home", href: "/", position: 0 },
-        { label: "Archive", href: "/archive", position: 1 },
-        { label: "Categories", href: "/categories", position: 2 },
-        { label: "Tags", href: "/tags", position: 3 },
+        { label: "首页", href: "/", position: 0 },
+        { label: "文章", href: "/archive", position: 1 },
+        { label: "分类", href: "/categories", position: 2 },
+        { label: "标签", href: "/tags", position: 3 },
       ],
     });
   }
@@ -126,25 +125,8 @@ export async function completeSetup(input: unknown): Promise<SetupResult> {
     });
   }
 
-  // Mark complete + write user prefs as cookies so the chosen locale/color
-  // take effect on the very next render.
   await setSetting(SETTINGS.SETUP_COMPLETED, true);
-
-  const store = await cookies();
-  if (isLocale(data.locale)) {
-    store.set(LOCALE_COOKIE, data.locale, {
-      path: "/",
-      maxAge: 60 * 60 * 24 * 365,
-      sameSite: "lax",
-    });
-  }
-  if (isColorTheme(data.color)) {
-    store.set(COLOR_THEME_COOKIE, data.color, {
-      path: "/",
-      maxAge: 60 * 60 * 24 * 365,
-      sameSite: "lax",
-    });
-  }
+  revalidatePath("/", "layout");
 
   return { ok: true, signedIn };
 }

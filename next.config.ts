@@ -1,22 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // cacheComponents enabled in the perf hardening phase
   reactStrictMode: true,
   images: {
-    remotePatterns: [
-      { protocol: "https", hostname: "**" },
-      { protocol: "http", hostname: "**" },
-    ],
+    // Only optimize our own uploads; an open remote pattern turns the
+    // optimizer into a public image proxy.
+    localPatterns: [{ pathname: "/uploads/**" }],
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 31536000,
   },
   experimental: {
-    optimizePackageImports: [
-      "lucide-react",
-      "date-fns",
-      "@radix-ui/react-icons",
-    ],
+    optimizePackageImports: ["lucide-react", "date-fns"],
   },
-  serverExternalPackages: ["@prisma/client", "@node-rs/argon2", "shiki", "satori", "@resvg/resvg-js"],
+  serverExternalPackages: ["@prisma/client", "@node-rs/argon2", "shiki"],
 };
 
 export default nextConfig;

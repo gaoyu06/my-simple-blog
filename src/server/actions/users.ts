@@ -29,7 +29,7 @@ export async function updateUser(input: unknown) {
       ...(status ? { status } : {}),
     },
   });
-  revalidatePath("/admin/users");
+  revalidatePath("/", "layout");
   return { ok: true as const };
 }
 
@@ -38,6 +38,6 @@ export async function deleteUser(id: string) {
   if (!isAdmin(session)) return { ok: false as const, error: "Not authorized." };
   if (id === session!.user.id) return { ok: false as const, error: "Cannot delete your own account." };
   await db.user.delete({ where: { id } });
-  revalidatePath("/admin/users");
+  revalidatePath("/", "layout");
   return { ok: true as const };
 }

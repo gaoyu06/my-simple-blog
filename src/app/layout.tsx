@@ -1,66 +1,38 @@
 import type { Metadata } from "next";
-import { Fraunces, Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
-import { cookies } from "next/headers";
+import { Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
+
 import "./globals.css";
-import { Suspense } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "sonner";
-import { RouteProgress } from "@/components/route-progress";
-import { I18nProvider } from "@/components/i18n-provider";
-import {
-  COLOR_THEME_COOKIE,
-  DEFAULT_COLOR_THEME,
-  isColorTheme,
-  type ColorTheme,
-} from "@/lib/color-theme";
-import { getLocale } from "@/lib/i18n";
+import { getSiteMeta } from "@/server/queries/site";
+import { getSettings } from "@/lib/settings";
+import { SETTINGS } from "@/lib/settings-keys";
 
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-  display: "swap",
-});
+const hanken = Hanken_Grotesk({ variable: "--font-hanken", subsets: ["latin"], display: "swap" });
+const jetbrains = JetBrains_Mono({ variable: "--font-jetbrains", subsets: ["latin"], display: "swap" });
 
-const hanken = Hanken_Grotesk({
-  variable: "--font-hanken",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const jetbrains = JetBrains_Mono({
-  variable: "--font-jetbrains",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-export const metadata: Metadata = {
-  title: { default: "Blog", template: "%s — Blog" },
-  description: "A blog powered by Next.js.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const meta = await getSiteMeta();
+  return {
+    metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
+    title: { default: meta.name, template: `%s - ${meta.name}` },
+    description: meta.description || undefined,
+    keywords: meta.keywords.length ? meta.keywords : undefined,
+    alternates: { types: { "application/rss+xml": "/rss.xml" } },
+  };
+}
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const cookieStore = await cookies();
-  const raw = cookieStore.get(COLOR_THEME_COOKIE)?.value;
-  const color: ColorTheme = isColorTheme(raw) ? raw : DEFAULT_COLOR_THEME;
-  const locale = await getLocale();
+  const theme = await getSettings([SETTINGS.THEME_PRIMARY, SETTINGS.THEME_DEFAULT_MODE]);
+  const primary = theme[SETTINGS.THEME_PRIMARY] as string | undefined;
+  const defaultMode = (theme[SETTINGS.THEME_DEFAULT_MODE] as string | undefined) || "system";
 
   return (
-    <html
-      lang={locale}
-      data-color={color}
-      className={`${fraunces.variable} ${hanken.variable} ${jetbrains.variable}`}
-      suppressHydrationWarning
-    >
-      <body className="min-h-dvh bg-[var(--color-canvas)] text-[var(--color-foreground)] antialiased">
-        <I18nProvider locale={locale}>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-            <Suspense fallback={null}>
-              <RouteProgress />
-            </Suspense>
-            {children}
-            <Toaster position="bottom-right" richColors closeButton theme="system" />
-          </ThemeProvider>
-        </I18nProvider>
+    <html lang="zh-CN" className={`${hanken.variable} ${jetbrains.variable}`} suppressHydrationWarning>
+      <body>
+        {primary ? <style>{`:root{--color-primary:${primary}}`}</style> : null}
+        <ThemeProvider attribute="class" defaultTheme={defaultMode} enableSystem disableTransitionOnChange>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

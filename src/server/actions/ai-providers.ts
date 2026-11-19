@@ -67,7 +67,7 @@ export async function saveProvider(input: unknown) {
     return { ok: false as const, error: err instanceof Error ? err.message : "Internal error" };
   }
 
-  revalidatePath("/admin/ai");
+  revalidatePath("/", "layout");
   return { ok: true as const };
 }
 
@@ -75,6 +75,6 @@ export async function deleteProvider(id: string) {
   const session = await auth();
   if (!isAdmin(session)) return { ok: false as const, error: "Not authorized." };
   await db.aIProvider.delete({ where: { id } });
-  revalidatePath("/admin/ai");
+  revalidatePath("/", "layout");
   return { ok: true as const };
 }

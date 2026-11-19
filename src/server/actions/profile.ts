@@ -63,6 +63,6 @@ export async function updateProfile(input: unknown) {
     return { ok: false as const, error: err instanceof Error ? err.message : "Internal error" };
   }
 
-  revalidatePath("/account");
+  revalidatePath("/", "layout");
   return { ok: true as const };
 }

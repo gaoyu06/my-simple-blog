@@ -65,8 +65,6 @@ export async function saveCategory(input: unknown) {
       },
     });
   }
-  revalidatePath("/categories");
-  revalidatePath("/admin/categories");
   revalidatePath("/", "layout");
   return { ok: true as const };
 }
@@ -75,8 +73,7 @@ export async function deleteCategory(id: string) {
   const session = await auth();
   if (!isAdmin(session)) return { ok: false as const, error: "Not authorized." };
   await db.category.delete({ where: { id } });
-  revalidatePath("/categories");
-  revalidatePath("/admin/categories");
+  revalidatePath("/", "layout");
   return { ok: true as const };
 }
 
@@ -84,8 +81,7 @@ export async function deleteTag(id: string) {
   const session = await auth();
   if (!isAdmin(session)) return { ok: false as const, error: "Not authorized." };
   await db.tag.delete({ where: { id } });
-  revalidatePath("/tags");
-  revalidatePath("/admin/tags");
+  revalidatePath("/", "layout");
   return { ok: true as const };
 }
 
@@ -108,8 +104,7 @@ export async function updateTag(input: unknown) {
     (data.translations as TaxonomyTranslationMap | undefined) ?? {},
   );
   await db.tag.update({ where: { id: data.id }, data: { name: data.name, slug, translations } });
-  revalidatePath("/tags");
-  revalidatePath("/admin/tags");
+  revalidatePath("/", "layout");
   return { ok: true as const };
 }
 

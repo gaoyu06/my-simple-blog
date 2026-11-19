@@ -46,7 +46,6 @@ export async function saveNavItem(input: unknown) {
     });
   }
   revalidatePath("/", "layout");
-  revalidatePath("/admin/navigation");
   return { ok: true as const };
 }
 
@@ -55,7 +54,6 @@ export async function deleteNavItem(id: string) {
   if (!isAdmin(session)) return { ok: false as const, error: "Not authorized." };
   await db.navItem.delete({ where: { id } });
   revalidatePath("/", "layout");
-  revalidatePath("/admin/navigation");
   return { ok: true as const };
 }
 
@@ -66,6 +64,5 @@ export async function reorderNavItems(ids: string[]) {
     ids.map((id, index) => db.navItem.update({ where: { id }, data: { position: index } })),
   );
   revalidatePath("/", "layout");
-  revalidatePath("/admin/navigation");
   return { ok: true as const };
 }

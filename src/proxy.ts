@@ -9,5 +9,6 @@ export default function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)"],
+  // Only the dashboard needs the auth gate; public pages stay static.
+  matcher: ["/admin/:path*"],
 };

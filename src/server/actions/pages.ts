@@ -67,8 +67,7 @@ export async function savePage(input: unknown) {
     });
   }
 
-  revalidatePath(`/${data.slug}`);
-  revalidatePath("/admin/pages");
+  revalidatePath("/", "layout");
   return { ok: true as const };
 }
 
@@ -78,7 +77,6 @@ export async function deletePage(id: string) {
   const page = await db.page.findUnique({ where: { id } });
   if (!page) return { ok: false as const, error: "Page not found." };
   await db.page.delete({ where: { id } });
-  revalidatePath(`/${page.slug}`);
-  revalidatePath("/admin/pages");
+  revalidatePath("/", "layout");
   return { ok: true as const };
 }

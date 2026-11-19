@@ -47,7 +47,8 @@ export async function GET(
       headers: {
         "Content-Type": mime,
         "Content-Length": String(stats.size),
-        "Cache-Control": "public, max-age=86400, must-revalidate",
+        // Upload paths carry random ids and are never rewritten in place.
+        "Cache-Control": "public, max-age=31536000, immutable",
         "Last-Modified": stats.mtime.toUTCString(),
       },
     });

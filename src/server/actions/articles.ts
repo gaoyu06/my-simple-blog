@@ -23,7 +23,6 @@ const upsertSchema = z.object({
     .optional()
     .nullable()
     .or(z.literal("").transform(() => null)),
-  coverStyleId: z.string().optional().nullable(),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).default("DRAFT"),
   categoryId: z.string().optional().nullable(),
   tags: tagsSchema.default([]),
@@ -88,7 +87,6 @@ export async function saveArticle(input: unknown): Promise<ArticleResult> {
         contentMd: data.contentMd,
         contentHtml,
         coverImage: data.coverImage ?? null,
-        coverStyleId: data.coverStyleId ?? null,
         status: data.status,
         categoryId: data.categoryId ?? null,
         featured: data.featured,
@@ -111,7 +109,6 @@ export async function saveArticle(input: unknown): Promise<ArticleResult> {
         contentMd: data.contentMd,
         contentHtml,
         coverImage: data.coverImage ?? null,
-        coverStyleId: data.coverStyleId ?? null,
         status: data.status,
         authorId: session!.user.id,
         categoryId: data.categoryId ?? null,
@@ -125,10 +122,7 @@ export async function saveArticle(input: unknown): Promise<ArticleResult> {
 
   await syncTags(article.id, data.tags);
 
-  revalidatePath("/");
-  revalidatePath("/archive");
-  revalidatePath(`/articles/${article.slug}`);
-  revalidatePath("/admin/articles");
+  revalidatePath("/", "layout");
 
   return { ok: true, id: article.id, slug: article.slug };
 }
@@ -139,9 +133,7 @@ export async function deleteArticle(id: string): Promise<ArticleResult> {
   if (!existing) return { ok: false, error: "Article not found." };
   if (!canEditArticle(session, existing)) return { ok: false, error: "Not authorized." };
   await db.article.delete({ where: { id } });
-  revalidatePath("/");
-  revalidatePath("/archive");
-  revalidatePath("/admin/articles");
+  revalidatePath("/", "layout");
   return { ok: true, id, slug: existing.slug };
 }
 
@@ -157,9 +149,6 @@ export async function publishArticle(id: string, publish: boolean): Promise<Arti
       publishedAt: publish ? existing.publishedAt ?? new Date() : null,
     },
   });
-  revalidatePath("/");
-  revalidatePath("/archive");
-  revalidatePath(`/articles/${existing.slug}`);
-  revalidatePath("/admin/articles");
+  revalidatePath("/", "layout");
   return { ok: true, id, slug: existing.slug };
 }
