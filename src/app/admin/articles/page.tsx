@@ -11,7 +11,7 @@ import { getT } from "@/lib/i18n";
 import { localizedName } from "@/lib/taxonomy-i18n";
 import type { DictKey } from "@/lib/i18n-dict";
 
-export const metadata = { title: "Articles" };
+export const metadata = { title: "文章" };
 
 export default async function AdminArticlesPage() {
   const session = await auth();

@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { UsersAdminTable } from "@/components/admin/users-admin-table";
 import { getT } from "@/lib/i18n";
 
-export const metadata = { title: "Users" };
+export const metadata = { title: "用户" };
 
 export default async function UsersAdmin() {
   const session = await auth();

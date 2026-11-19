@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { NavItemsEditor } from "@/components/admin/nav-items-editor";
 
-export const metadata = { title: "Navigation" };
+export const metadata = { title: "导航" };
 
 export default async function NavigationAdmin() {
   const session = await auth();
@@ -24,8 +24,8 @@ export default async function NavigationAdmin() {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Top nav items</CardTitle>
-          <CardDescription>Reorder by arrows, edit or remove as needed. Changes are reflected immediately.</CardDescription>
+          <CardTitle>顶部导航</CardTitle>
+          <CardDescription>用箭头调整顺序，修改后立即生效。</CardDescription>
         </CardHeader>
         <CardContent>
           <NavItemsEditor items={items} />

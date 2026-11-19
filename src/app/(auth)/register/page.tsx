@@ -6,7 +6,7 @@ import { RegisterForm } from "@/components/auth/register-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getT } from "@/lib/i18n";
 
-export const metadata = { title: "Create account" };
+export const metadata = { title: "注册" };
 
 export default async function RegisterPage() {
   const session = await auth();

@@ -64,7 +64,7 @@ export function TagsInput({ value, onChange, placeholder, className }: TagsInput
             setDraft("");
           }
         }}
-        placeholder={value.length === 0 ? (placeholder ?? "Add tag, press Enter") : ""}
+        placeholder={value.length === 0 ? (placeholder ?? "输入标签后按回车") : ""}
         className="h-7 min-w-[120px] flex-1 border-0 bg-transparent p-0 px-1 shadow-none focus-visible:shadow-none"
       />
     </div>

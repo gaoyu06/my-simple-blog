@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { CommentsModerator } from "@/components/admin/comments-moderator";
 import { getT } from "@/lib/i18n";
 
-export const metadata = { title: "Comments" };
+export const metadata = { title: "评论" };
 
 export default async function CommentsAdmin() {
   const session = await auth();

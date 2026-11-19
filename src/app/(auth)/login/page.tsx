@@ -6,7 +6,7 @@ import { LoginForm } from "@/components/auth/login-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getT } from "@/lib/i18n";
 
-export const metadata = { title: "Sign in" };
+export const metadata = { title: "登录" };
 
 export default async function LoginPage() {
   const session = await auth();

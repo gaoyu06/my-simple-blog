@@ -105,12 +105,14 @@ function TagDialog({
   const [translations, setTranslations] = React.useState<TaxonomyTranslationMap>({});
   const [saving, setSaving] = React.useState(false);
 
-  React.useEffect(() => {
+  const [synced, setSynced] = React.useState<{ open: boolean; initial: typeof initial } | null>(null);
+  if (!synced || synced.open !== open || synced.initial !== initial) {
+    setSynced({ open, initial });
     if (open && initial) {
       setName(initial.name);
       setTranslations(parseTranslations(initial.translations));
     }
-  }, [open, initial]);
+  }
 
   function updateLocaleName(loc: Locale, v: string) {
     setTranslations((prev) => ({ ...prev, [loc]: { ...(prev[loc] ?? {}), name: v } }));

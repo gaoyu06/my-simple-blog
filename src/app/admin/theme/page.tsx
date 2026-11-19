@@ -7,7 +7,7 @@ import { getSettings } from "@/lib/settings";
 import { SETTINGS } from "@/lib/settings-keys";
 import { getT } from "@/lib/i18n";
 
-export const metadata = { title: "Theme" };
+export const metadata = { title: "外观" };
 
 export default async function ThemeAdmin() {
   const session = await auth();
@@ -24,10 +24,8 @@ export default async function ThemeAdmin() {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Appearance</CardTitle>
-          <CardDescription>
-            Tune the primary color (OKLCH-friendly), default appearance, and inject custom CSS.
-          </CardDescription>
+          <CardTitle>外观</CardTitle>
+          <CardDescription>主色、默认明暗模式和自定义 CSS。</CardDescription>
         </CardHeader>
         <CardContent>
           <ThemeForm

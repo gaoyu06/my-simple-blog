@@ -7,7 +7,7 @@ import { AddAIProviderDialog } from "@/components/admin/ai-provider-dialog";
 import { AIProvidersTable } from "@/components/admin/ai-providers-table";
 import { getT } from "@/lib/i18n";
 
-export const metadata = { title: "AI Providers" };
+export const metadata = { title: "AI 服务" };
 
 export default async function AIAdminPage() {
   const session = await auth();

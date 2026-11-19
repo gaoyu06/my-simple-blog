@@ -113,18 +113,6 @@ export function SettingsForm({ initial }: { initial: Initial }) {
 
         <TabsContent value="home" className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="h-eyebrow">{t("admin.settings.field.heroEyebrow")}</Label>
-            <Input
-              id="h-eyebrow"
-              value={data.heroEyebrow}
-              onChange={(e) => setData({ ...data, heroEyebrow: e.target.value })}
-              placeholder={t("admin.settings.field.heroEyebrowPlaceholder", { name: "{name}" })}
-            />
-            <p className="text-xs text-[var(--color-foreground-subtle)]">
-              {t("admin.settings.field.heroEyebrowHint")}
-            </p>
-          </div>
-          <div className="flex flex-col gap-1.5">
             <Label htmlFor="h-title">{t("admin.settings.field.heroTitle")}</Label>
             <Textarea
               id="h-title"
@@ -144,43 +132,6 @@ export function SettingsForm({ initial }: { initial: Initial }) {
               onChange={(e) => setData({ ...data, heroLede: e.target.value })}
               rows={2}
             />
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="cta1-label">{t("admin.settings.field.ctaPrimaryLabel")}</Label>
-              <Input
-                id="cta1-label"
-                value={data.ctaPrimaryLabel}
-                onChange={(e) => setData({ ...data, ctaPrimaryLabel: e.target.value })}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="cta1-href">{t("admin.settings.field.ctaPrimaryHref")}</Label>
-              <Input
-                id="cta1-href"
-                value={data.ctaPrimaryHref}
-                onChange={(e) => setData({ ...data, ctaPrimaryHref: e.target.value })}
-                placeholder="/archive"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="cta2-label">{t("admin.settings.field.ctaSecondaryLabel")}</Label>
-              <Input
-                id="cta2-label"
-                value={data.ctaSecondaryLabel}
-                onChange={(e) => setData({ ...data, ctaSecondaryLabel: e.target.value })}
-                placeholder={t("admin.settings.field.ctaSecondaryLabelPlaceholder")}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="cta2-href">{t("admin.settings.field.ctaSecondaryHref")}</Label>
-              <Input
-                id="cta2-href"
-                value={data.ctaSecondaryHref}
-                onChange={(e) => setData({ ...data, ctaSecondaryHref: e.target.value })}
-                placeholder="/categories"
-              />
-            </div>
           </div>
         </TabsContent>
 

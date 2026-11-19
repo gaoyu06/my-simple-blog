@@ -6,7 +6,7 @@ import { TagsAdminTable } from "@/components/admin/tags-admin-table";
 import { db } from "@/lib/db";
 import { getT } from "@/lib/i18n";
 
-export const metadata = { title: "Tags" };
+export const metadata = { title: "标签" };
 
 export default async function TagsAdmin() {
   const session = await auth();

@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { PageForm } from "@/components/admin/page-form";
 
-export const metadata = { title: "Edit page" };
+export const metadata = { title: "编辑页面" };
 
 export default async function EditCustomPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getT } from "@/lib/i18n";
 
-export const metadata = { title: "Pages" };
+export const metadata = { title: "页面" };
 
 export default async function PagesAdmin() {
   const session = await auth();

@@ -6,7 +6,7 @@ import { listCategoriesWithCounts } from "@/server/queries/taxonomy";
 import { CategoriesEditor } from "@/components/admin/categories-editor";
 import { getT } from "@/lib/i18n";
 
-export const metadata = { title: "Categories" };
+export const metadata = { title: "分类" };
 
 export default async function CategoriesAdmin() {
   const session = await auth();

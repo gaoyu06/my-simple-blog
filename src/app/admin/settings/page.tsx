@@ -7,7 +7,7 @@ import { getSettings } from "@/lib/settings";
 import { SETTINGS } from "@/lib/settings-keys";
 import { getT } from "@/lib/i18n";
 
-export const metadata = { title: "Settings" };
+export const metadata = { title: "设置" };
 
 export default async function SettingsAdmin() {
   const session = await auth();

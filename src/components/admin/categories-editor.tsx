@@ -35,7 +35,7 @@ export function CategoriesEditor({ categories }: { categories: Cat[] }) {
   const [adding, setAdding] = React.useState(false);
 
   async function onDelete(id: string) {
-    if (!confirm("Delete this category? Articles will become uncategorized.")) return;
+    if (!confirm("删除这个分类？其中的文章会变为未分类。")) return;
     const result = await deleteCategory(id);
     if (!result.ok) {
       toast.error(result.error);
@@ -114,13 +114,15 @@ function CategoryDialog({
   const [description, setDescription] = React.useState("");
   const [saving, setSaving] = React.useState(false);
 
-  React.useEffect(() => {
+  const [synced, setSynced] = React.useState<{ open: boolean; initial: typeof initial } | null>(null);
+  if (!synced || synced.open !== open || synced.initial !== initial) {
+    setSynced({ open, initial });
     if (open) {
       setName(initial?.name ?? "");
       setSlug(initial?.slug ?? "");
       setDescription(initial?.description ?? "");
     }
-  }, [open, initial]);
+  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -144,7 +146,7 @@ function CategoryDialog({
     <Dialog open={open} onOpenChange={(o) => (!o ? onClose() : undefined)}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{initial ? "Edit category" : "New category"}</DialogTitle>
+          <DialogTitle>{initial ? "编辑分类" : "新建分类"}</DialogTitle>
           <DialogDescription>
             Categories are mutually exclusive (one per article). Tags are for cross-cutting topics.
           </DialogDescription>

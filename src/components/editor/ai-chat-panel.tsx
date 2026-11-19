@@ -82,7 +82,7 @@ export function AiChatPanel({ buildContextSystemPrompt, getEditorSelection, onIn
         );
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Chat failed.";
+      const msg = err instanceof Error ? err.message : "对话失败";
       toast.error(msg);
       setMessages((prev) => prev.filter((m) => m.id !== assistantId));
     } finally {
@@ -105,7 +105,7 @@ export function AiChatPanel({ buildContextSystemPrompt, getEditorSelection, onIn
       <div className="flex-1 overflow-y-auto px-4 py-3">
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center text-sm text-[var(--color-foreground-muted)]">
-            <p>Ask anything about your draft, brainstorm, or get a critique.</p>
+            <p>可以就草稿提问、讨论思路或请它挑问题。</p>
             <p className="mt-2 text-xs text-[var(--color-foreground-subtle)]">
               The current article is included as context.
             </p>

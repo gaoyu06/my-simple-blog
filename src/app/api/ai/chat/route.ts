@@ -29,7 +29,7 @@ export async function POST(request: Request) {
   let parsed;
   try {
     parsed = bodySchema.parse(await request.json());
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: "Invalid payload." }, { status: 400 });
   }
 

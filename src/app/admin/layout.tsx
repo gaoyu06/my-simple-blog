@@ -3,11 +3,8 @@ import { redirect } from "next/navigation";
 
 import { auth } from "@/lib/auth";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { ColorThemeSwitcher } from "@/components/ui/color-theme-switcher";
-import { LanguageSwitcher } from "@/components/ui/language-switcher";
 import { Separator } from "@/components/ui/separator";
 import { AccountMenu } from "@/components/site/account-menu";
-import { PageTransition } from "@/components/page-transition";
 import {
   AdminNav,
   type AdminNavGroup,
@@ -16,6 +13,7 @@ import {
 import { getT } from "@/lib/i18n";
 import type { DictKey } from "@/lib/i18n-dict";
 import { isInitialized } from "@/lib/install-state";
+import { Toaster } from "@/components/toaster";
 
 type AdminItem = { labelKey: DictKey; href: string; icon: AdminIconName };
 
@@ -96,8 +94,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-14 items-center justify-end gap-2 border-b border-[var(--color-border)] bg-[oklch(from_var(--color-canvas)_l_c_h/0.85)] px-6 backdrop-blur-md">
-          <LanguageSwitcher />
-          <ColorThemeSwitcher />
           <ThemeToggle />
           <Separator orientation="vertical" className="mx-1 h-6" />
           <AccountMenu
@@ -110,9 +106,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           />
         </header>
         <main className="flex-1 overflow-x-hidden">
-          <PageTransition>{children}</PageTransition>
+          {children}
         </main>
       </div>
+      <Toaster />
     </div>
   );
 }

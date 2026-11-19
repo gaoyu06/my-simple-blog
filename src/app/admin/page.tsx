@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/
 import { Button } from "@/components/ui/button";
 import { getT } from "@/lib/i18n";
 
-export const metadata = { title: "Dashboard" };
+export const metadata = { title: "概览" };
 
 async function getStats(authorId: string, isAdmin: boolean) {
   const where = isAdmin ? {} : { authorId };

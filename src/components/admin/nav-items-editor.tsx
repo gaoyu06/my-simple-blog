@@ -35,9 +35,11 @@ export function NavItemsEditor({ items: initial }: { items: Item[] }) {
   const [editing, setEditing] = React.useState<Item | null>(null);
   const [adding, setAdding] = React.useState(false);
 
-  React.useEffect(() => {
+  const [syncedInitial, setSyncedInitial] = React.useState(initial);
+  if (syncedInitial !== initial) {
+    setSyncedInitial(initial);
     setItems(initial);
-  }, [initial]);
+  }
 
   async function move(idx: number, dir: -1 | 1) {
     const next = [...items];
@@ -143,13 +145,15 @@ function NavItemDialog({
   const [external, setExternal] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
 
-  React.useEffect(() => {
+  const [synced, setSynced] = React.useState<{ open: boolean; initial: typeof initial } | null>(null);
+  if (!synced || synced.open !== open || synced.initial !== initial) {
+    setSynced({ open, initial });
     if (open) {
       setLabel(initial?.label ?? "");
       setHref(initial?.href ?? "");
       setExternal(initial?.external ?? false);
     }
-  }, [open, initial]);
+  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
