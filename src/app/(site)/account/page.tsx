@@ -6,8 +6,9 @@ import { db } from "@/lib/db";
 import { getT } from "@/lib/i18n";
 import { Card, CardContent } from "@/components/ui/card";
 import { ProfileForm } from "@/components/site/profile-form";
+import { Toaster } from "@/components/toaster";
 
-export const metadata = { title: "Account" };
+export const metadata = { title: "账号" };
 
 const ROLE_KEY = {
   ADMIN: "account.role.admin",
@@ -91,6 +92,7 @@ export default async function AccountPage() {
           />
         </CardContent>
       </Card>
+      <Toaster />
     </div>
   );
 }

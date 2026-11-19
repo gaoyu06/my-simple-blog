@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { LogOut, LayoutDashboard, User as UserIcon } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { useT } from "@/components/i18n-provider";
 import { logoutAction } from "@/server/auth-actions";
 

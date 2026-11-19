@@ -1,45 +1,51 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useT } from "@/components/i18n-provider";
 import { postComment } from "@/server/actions/comments";
+
+// Pages are static, so the signed-in state is looked up in the browser.
+let sessionPromise: Promise<boolean> | null = null;
+function useSignedIn(): boolean {
+  const [signedIn, setSignedIn] = React.useState(false);
+  React.useEffect(() => {
+    sessionPromise ??= fetch("/api/auth/session")
+      .then((r) => r.json())
+      .then((s: { user?: unknown } | null) => Boolean(s?.user))
+      .catch(() => false);
+    void sessionPromise.then(setSignedIn);
+  }, []);
+  return signedIn;
+}
 
 interface CommentFormProps {
   articleId: string;
   parentId?: string;
-  isLoggedIn: boolean;
   allowAnonymous: boolean;
   needsApproval: boolean;
   onPosted?: () => void;
   compact?: boolean;
 }
 
-export function CommentForm({
-  articleId,
-  parentId,
-  isLoggedIn,
-  allowAnonymous,
-  needsApproval,
-  onPosted,
-  compact,
-}: CommentFormProps) {
-  const { t } = useT();
+export function CommentForm({ articleId, parentId, allowAnonymous, needsApproval, onPosted, compact }: CommentFormProps) {
+  const isLoggedIn = useSignedIn();
   const [content, setContent] = React.useState("");
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [website, setWebsite] = React.useState("");
   const [submitting, setSubmitting] = React.useState(false);
+  const key = parentId ?? "root";
 
   if (!isLoggedIn && !allowAnonymous) {
     return (
       <p className="text-sm text-[var(--color-foreground-muted)]">
-        {t("comments.form.signIn.required")} <a href="/login">{t("common.signIn")}</a>
+        <Link href="/login">登录</Link>后可以评论。
       </p>
     );
   }
@@ -47,8 +53,7 @@ export function CommentForm({
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSubmitting(true);
-    const formEl = e.currentTarget;
-    const honeypot = (formEl.elements.namedItem("website_h") as HTMLInputElement)?.value ?? "";
+    const honeypot = (e.currentTarget.elements.namedItem("website_h") as HTMLInputElement | null)?.value ?? "";
     const result = await postComment({
       articleId,
       parentId,
@@ -63,7 +68,7 @@ export function CommentForm({
       toast.error(result.error);
       return;
     }
-    toast.success(result.pending ? t("comments.toast.pending") : t("comments.toast.posted"));
+    toast.success(result.pending ? "评论已提交，审核后显示" : "评论已发布");
     setContent("");
     setWebsite("");
     onPosted?.();
@@ -71,22 +76,29 @@ export function CommentForm({
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor={`content-${key}`} className="sr-only">
+          评论内容
+        </Label>
+        <Textarea
+          id={`content-${key}`}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          required
+          rows={compact ? 3 : 4}
+          placeholder="写下你的看法，支持 Markdown"
+        />
+      </div>
       {!isLoggedIn ? (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className={`grid gap-3 ${compact ? "sm:grid-cols-2" : "sm:grid-cols-3"}`}>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor={`name-${parentId ?? "root"}`}>{t("comments.form.name")}</Label>
-            <Input
-              id={`name-${parentId ?? "root"}`}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              autoComplete="name"
-            />
+            <Label htmlFor={`name-${key}`}>昵称</Label>
+            <Input id={`name-${key}`} value={name} onChange={(e) => setName(e.target.value)} required autoComplete="name" />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor={`email-${parentId ?? "root"}`}>{t("comments.form.email")}</Label>
+            <Label htmlFor={`email-${key}`}>邮箱（不公开）</Label>
             <Input
-              id={`email-${parentId ?? "root"}`}
+              id={`email-${key}`}
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -94,45 +106,25 @@ export function CommentForm({
               autoComplete="email"
             />
           </div>
+          {!compact ? (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={`web-${key}`}>网站（选填）</Label>
+              <Input
+                id={`web-${key}`}
+                type="url"
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+                placeholder="https://"
+              />
+            </div>
+          ) : null}
         </div>
       ) : null}
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor={`content-${parentId ?? "root"}`}>{t("comments.form.content")}</Label>
-        <Textarea
-          id={`content-${parentId ?? "root"}`}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          required
-          rows={compact ? 3 : 4}
-          placeholder={t("comments.form.placeholder")}
-        />
-      </div>
-      {!compact && !isLoggedIn ? (
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor={`web-${parentId ?? "root"}`}>{t("comments.form.website")}</Label>
-          <Input
-            id={`web-${parentId ?? "root"}`}
-            type="url"
-            value={website}
-            onChange={(e) => setWebsite(e.target.value)}
-            placeholder="https://"
-          />
-        </div>
-      ) : null}
-      <input
-        type="text"
-        name="website_h"
-        tabIndex={-1}
-        autoComplete="off"
-        className="absolute -left-[9999px]"
-        aria-hidden
-      />
+      <input type="text" name="website_h" tabIndex={-1} autoComplete="off" className="absolute -left-[9999px]" aria-hidden />
       <div className="flex items-center justify-between gap-2 text-xs text-[var(--color-foreground-subtle)]">
-        <span>
-          {needsApproval ? t("comments.form.policy.review") : t("comments.form.policy.public")}
-        </span>
+        <span>{needsApproval ? "评论经审核后显示" : ""}</span>
         <Button type="submit" loading={submitting} size="sm">
-          {parentId ? t("comments.form.reply") : t("comments.form.submit")}
+          {parentId ? "回复" : "发表评论"}
         </Button>
       </div>
     </form>

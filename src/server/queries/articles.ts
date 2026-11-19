@@ -75,3 +75,30 @@ export async function listFeaturedArticles(take = 3) {
     take,
   });
 }
+
+/** Every published article, newest first, with just what the archive shows. */
+export async function listArchive() {
+  return db.article.findMany({
+    where: { status: "PUBLISHED" },
+    orderBy: { publishedAt: "desc" },
+    select: { id: true, slug: true, title: true, publishedAt: true },
+  });
+}
+
+/** Neighbours by publish date, for the links under an article. */
+export async function getAdjacentArticles(publishedAt: Date) {
+  const select = { slug: true, title: true } as const;
+  const [prev, next] = await Promise.all([
+    db.article.findFirst({
+      where: { status: "PUBLISHED", publishedAt: { lt: publishedAt } },
+      orderBy: { publishedAt: "desc" },
+      select,
+    }),
+    db.article.findFirst({
+      where: { status: "PUBLISHED", publishedAt: { gt: publishedAt } },
+      orderBy: { publishedAt: "asc" },
+      select,
+    }),
+  ]);
+  return { prev, next };
+}

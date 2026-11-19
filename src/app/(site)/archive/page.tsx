@@ -1,120 +1,47 @@
 import Link from "next/link";
-import { format } from "date-fns";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { listPublishedArticles, countPublishedArticles } from "@/server/queries/articles";
-import { getT } from "@/lib/i18n";
-import { localizedName } from "@/lib/taxonomy-i18n";
+import { formatMonthDay, yearOf } from "@/lib/date";
 
-export const metadata = { title: "Archive" };
+import { PageHeading } from "@/components/site/page-heading";
+import { listArchive } from "@/server/queries/articles";
 
-const PAGE_SIZE = 20;
+export const metadata = { title: "文章" };
 
-export default async function ArchivePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ page?: string }>;
-}) {
-  const params = await searchParams;
-  const page = Math.max(1, Number(params.page ?? 1));
-  const [articles, total, { t, locale }] = await Promise.all([
-    listPublishedArticles({ take: PAGE_SIZE, skip: (page - 1) * PAGE_SIZE }),
-    countPublishedArticles(),
-    getT(),
-  ]);
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+export default async function ArchivePage() {
+  const articles = await listArchive();
+  const years = new Map<number, typeof articles>();
+  for (const a of articles) {
+    const year = yearOf(a.publishedAt ?? 0);
+    years.set(year, [...(years.get(year) ?? []), a]);
+  }
 
   return (
-    <div className="mx-auto max-w-4xl px-6 py-16">
-      <div className="mb-10">
-        <p className="eyebrow mb-2">{t("archive.eyebrow")}</p>
-        <h1 className="font-serif text-4xl font-medium tracking-tight">{t("archive.title")}</h1>
-        <p className="mt-2 text-sm text-[var(--color-foreground-muted)]">
-          {total === 1 ? t("archive.totalOne") : t("archive.total", { count: total })}
-        </p>
-      </div>
-
-      {articles.length === 0 ? (
-        <Card>
-          <CardContent className="py-10 text-center text-[var(--color-foreground-muted)]">
-            {t("archive.empty")}
-          </CardContent>
-        </Card>
-      ) : (
-        <ul className="flex flex-col divide-y divide-[var(--color-border)]">
-          {articles.map((article) => (
-            <li key={article.id} className="group py-6">
-              <div className="flex items-center gap-5">
-                {article.coverImage ? (
-                  <Link
-                    href={`/articles/${article.slug}`}
-                    className="block aspect-[4/3] w-24 shrink-0 overflow-hidden rounded-[var(--radius-md)] bg-[var(--color-muted)] sm:w-28"
-                    aria-hidden="true"
-                    tabIndex={-1}
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={article.coverImage}
-                      alt=""
-                      loading="lazy"
-                      className="h-full w-full object-cover transition-transform duration-500 ease-[var(--ease-out-soft)] group-hover:scale-[1.03]"
-                    />
-                  </Link>
-                ) : null}
-                <div className="min-w-0 flex-1">
-                  <div className="mb-1.5 flex items-center gap-2">
-                    {article.category ? (
-                      <Badge variant="outline">{localizedName(article.category, locale)}</Badge>
-                    ) : null}
-                    {article.featured ? <Badge variant="default">{t("home.article.featured")}</Badge> : null}
-                  </div>
-                  <Link href={`/articles/${article.slug}`} className="no-underline">
-                    <h2 className="font-serif text-xl font-medium leading-snug tracking-tight transition-colors group-hover:text-[var(--color-primary)]">
-                      {article.title}
-                    </h2>
-                  </Link>
-                  {article.summary ? (
-                    <p className="mt-1 line-clamp-2 text-sm text-[var(--color-foreground-muted)]">
-                      {article.summary}
-                    </p>
-                  ) : null}
-                </div>
-                <time className="shrink-0 font-mono text-xs uppercase tabular-nums tracking-wider text-[var(--color-foreground-subtle)]">
-                  {article.publishedAt ? format(article.publishedAt, "yyyy.MM.dd") : ""}
-                </time>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {totalPages > 1 ? (
-        <nav className="mt-10 flex items-center justify-between text-sm">
-          {page > 1 ? (
-            <Link
-              href={`/archive?page=${page - 1}`}
-              className="text-[var(--color-foreground-muted)] no-underline transition-colors hover:text-[var(--color-foreground)]"
-            >
-              {t("archive.newer")}
-            </Link>
-          ) : (
-            <span />
-          )}
-          <span className="font-mono text-xs uppercase tracking-wider text-[var(--color-foreground-subtle)]">
-            {t("archive.pageOf", { page, total: totalPages })}
-          </span>
-          {page < totalPages ? (
-            <Link
-              href={`/archive?page=${page + 1}`}
-              className="text-[var(--color-foreground-muted)] no-underline transition-colors hover:text-[var(--color-foreground)]"
-            >
-              {t("archive.older")}
-            </Link>
-          ) : (
-            <span />
-          )}
-        </nav>
-      ) : null}
+    <div className="mx-auto max-w-3xl px-4 pt-10 sm:px-6 sm:pt-14">
+      <PageHeading title="全部文章" note={`${articles.length} 篇`} />
+      {[...years].map(([year, items]) => (
+        <section key={year} className="mt-10 first:mt-6" aria-labelledby={`y${year}`}>
+          <h2 id={`y${year}`} className="mb-2 font-mono text-sm font-medium text-[var(--color-foreground-subtle)]">
+            {year}
+            <span className="ml-2 font-normal">· {items.length}</span>
+          </h2>
+          <ul>
+            {items.map((a) => (
+              <li key={a.id}>
+                <Link
+                  href={`/articles/${a.slug}`}
+                  className="group grid grid-cols-[3.5rem_minmax(0,1fr)] items-baseline gap-4 py-2.5"
+                >
+                  <time className="font-mono text-[13px] tabular-nums text-[var(--color-foreground-subtle)]">
+                    {a.publishedAt ? formatMonthDay(a.publishedAt) : ""}
+                  </time>
+                  <span className="text-[15.5px] transition-colors group-hover:text-[var(--color-primary)]">
+                    {a.title}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
     </div>
   );
 }

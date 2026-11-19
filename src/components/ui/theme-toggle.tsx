@@ -1,35 +1,20 @@
 "use client";
 
-import * as React from "react";
 import { useTheme } from "next-themes";
-import { Sun, Moon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useT } from "@/components/i18n-provider";
+import { Moon, Sun } from "lucide-react";
 
+/** Icons swap through the `dark` class, so no mount check is needed. */
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
-  const { t } = useT();
-  const [mounted, setMounted] = React.useState(false);
-  React.useEffect(() => setMounted(true), []);
-
-  const isDark = mounted && resolvedTheme === "dark";
   return (
-    <Button
+    <button
       type="button"
-      variant="ghost"
-      size="icon"
-      aria-label={isDark ? t("switcher.theme.toLight") : t("switcher.theme.toDark")}
-      onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="relative"
+      aria-label="切换明暗模式"
+      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+      className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] text-[var(--color-foreground-muted)] transition-colors hover:bg-[var(--color-muted)] hover:text-[var(--color-foreground)]"
     >
-      <Sun
-        className="h-4 w-4 rotate-0 scale-100 transition-transform duration-300 dark:-rotate-90 dark:scale-0"
-        aria-hidden
-      />
-      <Moon
-        className="absolute h-4 w-4 rotate-90 scale-0 transition-transform duration-300 dark:rotate-0 dark:scale-100"
-        aria-hidden
-      />
-    </Button>
+      <Sun className="h-4 w-4 dark:hidden" aria-hidden />
+      <Moon className="hidden h-4 w-4 dark:block" aria-hidden />
+    </button>
   );
 }

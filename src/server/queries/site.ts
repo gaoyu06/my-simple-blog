@@ -20,7 +20,7 @@ export async function getSiteMeta(): Promise<SiteMeta> {
   return {
     name: (raw[SETTINGS.SITE_NAME] as string) || "Blog",
     description: (raw[SETTINGS.SITE_DESCRIPTION] as string) || "",
-    footer: (raw[SETTINGS.SITE_FOOTER] as string) || "Built with Next.js.",
+    footer: (raw[SETTINGS.SITE_FOOTER] as string) || "",
     keywords: (raw[SETTINGS.SITE_KEYWORDS] as string[]) || [],
   };
 }

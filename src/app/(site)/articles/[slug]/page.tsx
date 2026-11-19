@@ -1,142 +1,169 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { format } from "date-fns";
-import { after } from "next/server";
+import { formatDate } from "@/lib/date";
 import type { Metadata } from "next";
-import { Eye, Clock } from "lucide-react";
 
-import { db } from "@/lib/db";
-import { renderMarkdown, stripLeadingTitle } from "@/lib/markdown";
-import { getArticleBySlug } from "@/server/queries/articles";
-import { Badge } from "@/components/ui/badge";
-import { TagChip } from "@/components/ui/tag-chip";
-import { Separator } from "@/components/ui/separator";
+import { renderArticle, stripLeadingTitle, type Heading } from "@/lib/markdown";
+import { getAdjacentArticles, getArticleBySlug } from "@/server/queries/articles";
 import { CommentSection } from "@/components/comments/comment-section";
-import { getT } from "@/lib/i18n";
+import { ViewBeacon } from "@/components/site/view-beacon";
 import { localizedName } from "@/lib/taxonomy-i18n";
+import { decodeParam } from "@/lib/utils";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
-  const { slug } = await params;
-  const article = await getArticleBySlug(slug);
+type Props = { params: Promise<{ slug: string }> };
+
+// Rendered on first visit, then cached until content changes.
+export function generateStaticParams() {
+  return [];
+}
+
+async function loadArticle(params: Props["params"]) {
+  const article = await getArticleBySlug(decodeParam((await params).slug));
+  return article?.status === "PUBLISHED" ? article : null;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const article = await loadArticle(params);
   if (!article) return {};
   return {
     title: article.title,
     description: article.summary ?? undefined,
+    alternates: { canonical: `/articles/${article.slug}` },
     openGraph: {
+      type: "article",
       title: article.title,
       description: article.summary ?? undefined,
-      images: article.coverImage ? [{ url: article.coverImage }] : undefined,
-      type: "article",
       publishedTime: article.publishedAt?.toISOString(),
-      authors: article.author?.name ? [article.author.name] : undefined,
+      tags: article.tags.map((t) => t.tag.name),
     },
   };
 }
 
-export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  const article = await getArticleBySlug(slug);
-  if (!article || article.status !== "PUBLISHED") notFound();
+function Toc({ headings }: { headings: Heading[] }) {
+  return (
+    <ol className="flex flex-col gap-2 text-[13.5px] leading-snug">
+      {headings.map((h) => (
+        <li key={h.id} className={h.depth === 3 ? "pl-3" : ""}>
+          <a
+            href={`#${h.id}`}
+            className="text-[var(--color-foreground-muted)] transition-colors hover:text-[var(--color-foreground)]"
+          >
+            {h.text}
+          </a>
+        </li>
+      ))}
+    </ol>
+  );
+}
 
-  after(async () => {
-    try {
-      await db.article.update({
-        where: { id: article.id },
-        data: { viewCount: { increment: 1 } },
-      });
-    } catch (e) {
-      console.error("view count increment failed", e);
-    }
-  });
+export default async function ArticlePage({ params }: Props) {
+  const article = await loadArticle(params);
+  if (!article) notFound();
 
-  const cleanedMd = stripLeadingTitle(article.contentMd, article.title);
-  const [html, { t, locale }] = await Promise.all([renderMarkdown(cleanedMd), getT()]);
-  const authorName = article.author?.name ?? article.author?.username ?? t("article.anonymous");
+  const [{ html, headings }, adjacent] = await Promise.all([
+    renderArticle(stripLeadingTitle(article.contentMd, article.title)),
+    article.publishedAt ? getAdjacentArticles(article.publishedAt) : { prev: null, next: null },
+  ]);
+  const showToc = headings.length >= 3;
 
   return (
-    <article className="mx-auto max-w-3xl px-6 py-16">
-      <header className="mb-10">
-        <Link
-          href="/archive"
-          className="font-mono text-xs uppercase tracking-wider text-[var(--color-foreground-subtle)] no-underline transition-colors hover:text-[var(--color-foreground)]"
-        >
-          {t("article.backLink")}
-        </Link>
-        <div className="mt-6 flex flex-wrap items-center gap-2">
-          {article.category ? (
-            <Link href={`/categories/${article.category.slug}`} className="no-underline">
-              <Badge variant="outline">{localizedName(article.category, locale)}</Badge>
-            </Link>
-          ) : null}
-          {article.featured ? <Badge variant="default">{t("home.article.featured")}</Badge> : null}
-        </div>
-        <h1 className="mt-4 font-serif text-4xl font-medium leading-[1.1] tracking-tight sm:text-5xl">
-          {article.title}
-        </h1>
-        {article.summary ? (
-          <p className="mt-4 text-lg leading-relaxed text-[var(--color-foreground-muted)]">
-            {article.summary}
+    <div className="mx-auto max-w-[720px] px-4 pt-10 sm:px-6 sm:pt-14 xl:grid xl:max-w-[1240px] xl:grid-cols-[minmax(0,1fr)_720px_minmax(0,1fr)] xl:gap-14">
+      <div className="hidden xl:block" />
+      <article className="min-w-0">
+        <header className="mb-8">
+          <h1 className="text-[26px] font-semibold leading-[1.35] sm:text-[32px]">{article.title}</h1>
+          <p className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13.5px] text-[var(--color-foreground-subtle)]">
+            {article.publishedAt ? (
+              <time className="font-mono" dateTime={article.publishedAt.toISOString()}>
+                {formatDate(article.publishedAt)}
+              </time>
+            ) : null}
+            {article.category ? (
+              <Link href={`/categories/${article.category.slug}`} className="hover:text-[var(--color-foreground)]">
+                {localizedName(article.category, "zh")}
+              </Link>
+            ) : null}
+            <span>{article.readingTime} 分钟阅读</span>
+            <span>{article.viewCount} 次浏览</span>
           </p>
-        ) : null}
-        <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-[var(--color-foreground-subtle)]">
-          {article.author ? (
-            <span className="text-[var(--color-foreground-muted)]">
-              {t("article.by", { author: authorName })}
-            </span>
-          ) : null}
-          {article.publishedAt ? (
-            <time className="font-mono uppercase tabular-nums tracking-wider">
-              {format(article.publishedAt, "yyyy.MM.dd")}
-            </time>
-          ) : null}
-          <span className="inline-flex items-center gap-1.5">
-            <Clock className="h-3 w-3" aria-hidden />
-            <span className="tabular-nums">{t("article.minRead", { count: article.readingTime })}</span>
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <Eye className="h-3 w-3" aria-hidden />
-            <span className="tabular-nums">{article.viewCount}</span>
-          </span>
-        </div>
-      </header>
+        </header>
 
-      {article.coverImage ? (
-        <div className="mb-10 overflow-hidden rounded-[var(--radius-lg)] shadow-[var(--shadow-card)]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+        {article.coverImage ? (
+          <Image
             src={article.coverImage}
-            alt={article.title}
-            className="h-auto w-full object-cover"
+            alt=""
+            width={1440}
+            height={810}
+            priority
+            sizes="(max-width: 760px) 100vw, 720px"
+            className="mb-10 h-auto w-full rounded-[var(--radius-md)] bg-[var(--color-muted)]"
           />
-        </div>
-      ) : null}
+        ) : null}
 
-      <div
-        className="prose"
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
+        {showToc ? (
+          <details className="mb-8 rounded-[var(--radius-md)] px-4 py-3 shadow-[var(--shadow-hairline)] xl:hidden">
+            <summary className="cursor-pointer text-sm font-medium">目录</summary>
+            <div className="mt-3">
+              <Toc headings={headings} />
+            </div>
+          </details>
+        ) : null}
 
-      {article.tags.length > 0 ? (
-        <div className="mt-12">
-          <p className="eyebrow mb-3">{t("article.tags")}</p>
-          <div className="flex flex-wrap gap-2">
-            {article.tags.map((tag) => (
-              <TagChip
-                key={tag.tag.id}
-                name={localizedName(tag.tag, locale)}
-                href={`/tags/${tag.tag.slug}`}
-              />
+        <div className="prose" dangerouslySetInnerHTML={{ __html: html }} />
+
+        {article.tags.length ? (
+          <ul className="mt-12 flex flex-wrap gap-2">
+            {article.tags.map(({ tag }) => (
+              <li key={tag.id}>
+                <Link
+                  href={`/tags/${tag.slug}`}
+                  className="inline-block rounded-[var(--radius-sm)] bg-[var(--color-muted)] px-2.5 py-1 text-[13px] text-[var(--color-foreground-muted)] transition-colors hover:text-[var(--color-foreground)]"
+                >
+                  # {localizedName(tag, "zh")}
+                </Link>
+              </li>
             ))}
-          </div>
-        </div>
-      ) : null}
+          </ul>
+        ) : null}
 
-      <Separator className="my-12" />
-      <CommentSection articleId={article.id} allowComment={article.allowComment} />
-    </article>
+        {adjacent.prev || adjacent.next ? (
+          <nav aria-label="相邻文章" className="mt-12 grid gap-4 border-t border-[var(--color-border)] pt-6 sm:grid-cols-2">
+            {adjacent.next ? (
+              <Link href={`/articles/${adjacent.next.slug}`} className="group">
+                <span className="text-xs text-[var(--color-foreground-subtle)]">← 较新</span>
+                <span className="mt-1 block text-[15px] transition-colors group-hover:text-[var(--color-primary)]">
+                  {adjacent.next.title}
+                </span>
+              </Link>
+            ) : (
+              <span />
+            )}
+            {adjacent.prev ? (
+              <Link href={`/articles/${adjacent.prev.slug}`} className="group sm:text-right">
+                <span className="text-xs text-[var(--color-foreground-subtle)]">较早 →</span>
+                <span className="mt-1 block text-[15px] transition-colors group-hover:text-[var(--color-primary)]">
+                  {adjacent.prev.title}
+                </span>
+              </Link>
+            ) : null}
+          </nav>
+        ) : null}
+
+        <div className="mt-14 border-t border-[var(--color-border)] pt-10">
+          <CommentSection articleId={article.id} allowComment={article.allowComment} />
+        </div>
+      </article>
+
+      {showToc ? (
+        <aside className="hidden xl:block">
+          <div className="sticky top-24 max-h-[calc(100dvh-8rem)] overflow-y-auto">
+            <p className="mb-3 text-xs font-medium text-[var(--color-foreground-subtle)]">目录</p>
+            <Toc headings={headings} />
+          </div>
+        </aside>
+      ) : null}
+      <ViewBeacon id={article.id} />
+    </div>
   );
 }

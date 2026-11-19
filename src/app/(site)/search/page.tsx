@@ -1,78 +1,71 @@
 import Link from "next/link";
-import { format } from "date-fns";
-import { Search as SearchIcon } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import { formatDate } from "@/lib/date";
+import { Search } from "lucide-react";
+
 import { searchArticles } from "@/server/queries/search";
-import { getT } from "@/lib/i18n";
 
-export const metadata = { title: "Search" };
+export const metadata = { title: "搜索" };
 
-export default async function SearchPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ q?: string }>;
-}) {
-  const { q } = await searchParams;
-  const query = q?.trim() ?? "";
-  const [results, { t }] = await Promise.all([
-    query ? searchArticles(query) : Promise.resolve([]),
-    getT(),
-  ]);
+function Highlight({ text, query }: { text: string; query: string }) {
+  const lower = text.toLowerCase();
+  const q = query.toLowerCase();
+  const parts: React.ReactNode[] = [];
+  let from = 0;
+  for (let at = lower.indexOf(q); q && at >= 0; at = lower.indexOf(q, at + q.length)) {
+    parts.push(text.slice(from, at), <mark key={at}>{text.slice(at, at + q.length)}</mark>);
+    from = at + q.length;
+  }
+  parts.push(text.slice(from));
+  return <>{parts}</>;
+}
+
+export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const query = ((await searchParams).q ?? "").trim();
+  const results = query ? await searchArticles(query) : [];
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-16">
-      <div className="mb-10">
-        <p className="eyebrow mb-2">{t("search.eyebrow")}</p>
-        <h1 className="font-serif text-4xl font-medium tracking-tight">{t("search.title")}</h1>
-        <form action="/search" method="get" className="mt-6">
-          <div className="relative">
-            <SearchIcon
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-foreground-subtle)]"
-              aria-hidden
-            />
-            <Input
-              type="search"
-              name="q"
-              defaultValue={query}
-              placeholder={t("search.placeholder")}
-              className="pl-9"
-              autoFocus
-            />
-          </div>
-        </form>
-      </div>
+    <div className="mx-auto max-w-3xl px-4 pt-10 sm:px-6 sm:pt-14">
+      <form action="/search" method="get" role="search" className="relative">
+        <Search
+          className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-foreground-subtle)]"
+          aria-hidden
+        />
+        <input
+          type="search"
+          name="q"
+          defaultValue={query}
+          placeholder="搜索文章标题和正文"
+          aria-label="搜索文章"
+          autoFocus
+          className="h-12 w-full rounded-[var(--radius-md)] bg-[var(--color-elevated)] pl-10 pr-4 text-[16px] shadow-[var(--shadow-input)] outline-none transition-shadow focus:shadow-[var(--shadow-input-focus)] focus-visible:outline-none"
+        />
+      </form>
 
-      {!query ? (
-        <p className="text-sm text-[var(--color-foreground-muted)]">{t("search.hint")}</p>
-      ) : results.length === 0 ? (
-        <Card>
-          <CardContent className="py-10 text-center text-[var(--color-foreground-muted)]">
-            {t("search.noResults", { q: query })}
-          </CardContent>
-        </Card>
-      ) : (
-        <ul className="flex flex-col divide-y divide-[var(--color-border)]">
-          {results.map((article) => (
-            <li key={article.id} className="group py-6">
-              <Link href={`/articles/${article.slug}`} className="no-underline">
-                <h2 className="font-serif text-xl font-medium leading-snug tracking-tight transition-colors group-hover:text-[var(--color-primary)]">
-                  {article.title}
-                </h2>
-              </Link>
-              {article.snippet ? (
-                <p
-                  className="mt-1 line-clamp-2 text-sm leading-relaxed text-[var(--color-foreground-muted)] [&_mark]:rounded [&_mark]:bg-[var(--color-primary-subtle)] [&_mark]:px-0.5 [&_mark]:text-[var(--color-primary)]"
-                  dangerouslySetInnerHTML={{ __html: article.snippet }}
-                />
+      {query ? (
+        <p className="mt-6 text-sm text-[var(--color-foreground-subtle)]">
+          {results.length ? `找到 ${results.length} 篇` : `没有找到包含“${query}”的文章`}
+        </p>
+      ) : null}
+
+      <ul className="mt-2 divide-y divide-[var(--color-border)]">
+        {results.map((a) => (
+          <li key={a.id}>
+            <Link href={`/articles/${a.slug}`} className="group block py-5">
+              <h2 className="text-[17px] font-semibold leading-snug transition-colors group-hover:text-[var(--color-primary)]">
+                <Highlight text={a.title} query={query} />
+              </h2>
+              {a.snippet ? (
+                <p className="mt-1.5 line-clamp-2 text-[14.5px] leading-relaxed text-[var(--color-foreground-muted)]">
+                  <Highlight text={a.snippet} query={query} />
+                </p>
               ) : null}
-              <time className="mt-2 block font-mono text-xs uppercase tabular-nums tracking-wider text-[var(--color-foreground-subtle)]">
-                {article.publishedAt ? format(article.publishedAt, "yyyy.MM.dd") : ""}
+              <time className="mt-2 block font-mono text-[13px] text-[var(--color-foreground-subtle)]">
+                {a.publishedAt ? formatDate(a.publishedAt) : ""}
               </time>
-            </li>
-          ))}
-        </ul>
-      )}
+            </Link>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

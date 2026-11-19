@@ -1,47 +1,41 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 
-import { db } from "@/lib/db";
 import { renderMarkdown, stripLeadingTitle } from "@/lib/markdown";
 import { sanitizeRichHtml } from "@/lib/html-sanitize";
-import { getT } from "@/lib/i18n";
+import { getPageBySlug } from "@/server/queries/taxonomy";
+import { decodeParam } from "@/lib/utils";
 
-async function loadPage(slugPath: string[]) {
-  const slug = slugPath.join("/");
-  return db.page.findUnique({ where: { slug } });
+// Rendered on first request, then cached until content changes.
+export function generateStaticParams() {
+  return [];
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string[] }>;
-}): Promise<Metadata> {
-  const { slug } = await params;
-  const page = await loadPage(slug);
-  if (!page) return {};
-  return { title: page.title, description: page.description ?? undefined };
+type Props = { params: Promise<{ slug: string[] }> };
+
+async function loadPage(params: Props["params"]) {
+  const page = await getPageBySlug((await params).slug.map(decodeParam).join("/"));
+  return page?.published ? page : null;
 }
 
-export default async function CustomPage({ params }: { params: Promise<{ slug: string[] }> }) {
-  const { slug } = await params;
-  const page = await loadPage(slug);
-  if (!page || !page.published) notFound();
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const page = await loadPage(params);
+  return page ? { title: page.title, description: page.description ?? undefined } : {};
+}
 
-  const cleanedContent =
-    page.contentType === "MARKDOWN" ? stripLeadingTitle(page.content, page.title) : page.content;
-  const [html, { t }] = await Promise.all([
-    page.contentType === "MARKDOWN" ? renderMarkdown(cleanedContent) : Promise.resolve(sanitizeRichHtml(cleanedContent)),
-    getT(),
-  ]);
+export default async function CustomPage({ params }: Props) {
+  const page = await loadPage(params);
+  if (!page) notFound();
+  const html =
+    page.contentType === "MARKDOWN"
+      ? await renderMarkdown(stripLeadingTitle(page.content, page.title))
+      : sanitizeRichHtml(page.content);
 
   return (
-    <article className="mx-auto max-w-3xl px-6 py-16">
+    <article className="mx-auto max-w-3xl px-4 pt-10 sm:px-6 sm:pt-14">
       <header className="mb-10">
-        <p className="eyebrow mb-2">{t("page.eyebrow")}</p>
-        <h1 className="font-serif text-4xl font-medium tracking-tight">{page.title}</h1>
-        {page.description ? (
-          <p className="mt-3 text-base text-[var(--color-foreground-muted)]">{page.description}</p>
-        ) : null}
+        <h1 className="text-[26px] font-semibold leading-tight sm:text-[32px]">{page.title}</h1>
+        {page.description ? <p className="mt-3 text-[var(--color-foreground-muted)]">{page.description}</p> : null}
       </header>
       <div className="prose" dangerouslySetInnerHTML={{ __html: html }} />
     </article>

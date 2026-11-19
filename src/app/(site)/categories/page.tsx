@@ -1,49 +1,38 @@
 import Link from "next/link";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { listCategoriesWithCounts } from "@/server/queries/taxonomy";
-import { getT } from "@/lib/i18n";
-import { localizedName, localizedDescription } from "@/lib/taxonomy-i18n";
 
-export const metadata = { title: "Categories" };
+import { PageHeading } from "@/components/site/page-heading";
+import { listCategoriesWithCounts } from "@/server/queries/taxonomy";
+import { localizedDescription, localizedName } from "@/lib/taxonomy-i18n";
+
+export const metadata = { title: "分类" };
 
 export default async function CategoriesPage() {
-  const [categories, { t, locale }] = await Promise.all([listCategoriesWithCounts(), getT()]);
-
+  const categories = (await listCategoriesWithCounts()).filter((c) => c.articleCount > 0);
   return (
-    <div className="mx-auto max-w-4xl px-6 py-16">
-      <div className="mb-10">
-        <p className="eyebrow mb-2">{t("categories.eyebrow")}</p>
-        <h1 className="font-serif text-4xl font-medium tracking-tight">{t("categories.title")}</h1>
-      </div>
-      {categories.length === 0 ? (
-        <p className="text-sm text-[var(--color-foreground-muted)]">{t("categories.empty")}</p>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {categories.map((c, idx) => {
-            const name = localizedName(c, locale);
-            const desc = localizedDescription(c, locale);
-            return (
-            <Link key={c.id} href={`/categories/${c.slug}`} className="no-underline">
-              <Card className={`rise rise-${Math.min(idx + 1, 6)} h-full`}>
-                <CardHeader>
-                  <CardTitle className="text-lg">{name}</CardTitle>
-                  {desc ? (
-                    <CardDescription className="line-clamp-2">{desc}</CardDescription>
+    <div className="mx-auto max-w-3xl px-4 pt-10 sm:px-6 sm:pt-14">
+      <PageHeading title="分类" note={`${categories.length} 个`} />
+      <ul className="divide-y divide-[var(--color-border)]">
+        {categories.map((c) => {
+          const description = localizedDescription(c, "zh");
+          return (
+            <li key={c.id}>
+              <Link href={`/categories/${c.slug}`} className="group flex items-baseline justify-between gap-6 py-4">
+                <span>
+                  <span className="text-[16px] font-medium transition-colors group-hover:text-[var(--color-primary)]">
+                    {localizedName(c, "zh")}
+                  </span>
+                  {description ? (
+                    <span className="mt-1 block text-sm text-[var(--color-foreground-muted)]">{description}</span>
                   ) : null}
-                </CardHeader>
-                <CardContent>
-                  <p className="font-mono text-xs uppercase tracking-wider text-[var(--color-foreground-subtle)]">
-                    {c.articleCount === 1
-                      ? t("categories.countOne")
-                      : t("categories.count", { count: c.articleCount })}
-                  </p>
-                </CardContent>
-              </Card>
-            </Link>
-            );
-          })}
-        </div>
-      )}
+                </span>
+                <span className="shrink-0 font-mono text-[13px] tabular-nums text-[var(--color-foreground-subtle)]">
+                  {c.articleCount} 篇
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

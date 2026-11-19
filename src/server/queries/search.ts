@@ -1,70 +1,35 @@
 import "server-only";
 import { db } from "@/lib/db";
+import { extractExcerpt } from "@/lib/markdown";
+
+const isPostgres = /^postgres(ql)?:\/\//i.test(process.env.DATABASE_URL ?? "");
 
 /**
- * Search articles by query.
- *
- * Uses SQLite FTS5 virtual table maintained via triggers (see migrations/20260516140000_fts).
- * Falls back to a LIKE query if FTS fails (e.g. on non-SQLite providers).
+ * Substring search over title, summary and body. Returns a plain-text
+ * snippet around the first body match.
+ * ponytail: LIKE scan, fine for hundreds of posts; switch to pg_trgm or a
+ * search index if the archive grows into the thousands.
  */
 export async function searchArticles(q: string, limit = 50) {
-  const trimmed = q.trim();
-  if (!trimmed) return [];
+  const query = q.trim().slice(0, 100);
+  if (!query) return [];
+  const contains = isPostgres ? { contains: query, mode: "insensitive" as const } : { contains: query };
 
-  type Row = {
-    id: string;
-    slug: string;
-    title: string;
-    summary: string | null;
-    publishedAt: Date | null;
-    readingTime: number;
-    snippet: string;
-  };
-
-  const ftsQuery = trimmed
-    .replace(/[^\p{L}\p{N}\s]/gu, " ")
-    .split(/\s+/)
-    .filter(Boolean)
-    .map((tok) => `${tok}*`)
-    .join(" ");
-
-  if (ftsQuery) {
-    try {
-      const rows = await db.$queryRawUnsafe<Row[]>(
-        `SELECT a.id, a.slug, a.title, a.summary, a.publishedAt, a.readingTime,
-                snippet("ArticleSearch", 2, '<mark>', '</mark>', '…', 24) AS snippet
-         FROM "ArticleSearch" s
-         JOIN "Article" a ON a.rowid = s.rowid
-         WHERE "ArticleSearch" MATCH ?
-           AND a.status = 'PUBLISHED'
-         ORDER BY rank
-         LIMIT ${Number(limit)}`,
-        ftsQuery,
-      );
-      return rows;
-    } catch {
-      // fall through
-    }
-  }
-
-  return (await db.article.findMany({
+  const rows = await db.article.findMany({
     where: {
       status: "PUBLISHED",
-      OR: [
-        { title: { contains: trimmed } },
-        { summary: { contains: trimmed } },
-        { contentMd: { contains: trimmed } },
-      ],
+      OR: [{ title: contains }, { summary: contains }, { contentMd: contains }],
     },
     orderBy: { publishedAt: "desc" },
     take: limit,
-    select: {
-      id: true,
-      slug: true,
-      title: true,
-      summary: true,
-      publishedAt: true,
-      readingTime: true,
-    },
-  })).map((a) => ({ ...a, snippet: a.summary ?? "" }));
+    select: { id: true, slug: true, title: true, summary: true, publishedAt: true, contentMd: true },
+  });
+
+  return rows.map(({ contentMd, ...a }) => {
+    const text = extractExcerpt(contentMd, 100_000);
+    const at = text.toLowerCase().indexOf(query.toLowerCase());
+    const snippet =
+      at < 0 ? (a.summary ?? "") : `${at > 40 ? "…" : ""}${text.slice(Math.max(0, at - 40), at + query.length + 80)}…`;
+    return { ...a, snippet };
+  });
 }
