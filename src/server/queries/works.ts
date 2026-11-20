@@ -1,4 +1,5 @@
 import "server-only";
+import { db } from "@/lib/db";
 import { getPageBySlug } from "@/server/queries/taxonomy";
 
 export type Work = {
@@ -10,6 +11,8 @@ export type Work = {
   stack: string;
   summary: string;
   ongoing: boolean;
+  /** First image on the work's own page, used as its cover. */
+  cover: string | null;
 };
 
 /**
@@ -21,11 +24,26 @@ export type Work = {
  */
 const BLOCK = /^### \[(.+?)\]\((.+?)\)\s*\n<span[^>]*>(.+?)<\/span>(?:<br\s*\/?>)?\s*\n(.+)$/gm;
 
+const FIRST_IMAGE = /!\[[^\]]*\]\(([^)\s]+)/;
+
 export async function listWorks(): Promise<Work[]> {
   const page = await getPageBySlug("works");
   if (!page?.published) return [];
-  return [...page.content.matchAll(BLOCK)].map(([, name, href, meta, summary]) => {
+  const blocks = [...page.content.matchAll(BLOCK)];
+  const slugs = blocks.map(([, , href]) => href.replace(/^\//, ""));
+  const pages = await db.page.findMany({ where: { slug: { in: slugs }, published: true }, select: { slug: true, content: true } });
+  const covers = new Map(pages.map((p) => [`/${p.slug}`, p.content.match(FIRST_IMAGE)?.[1] ?? null]));
+  return blocks.map(([, name, href, meta, summary]) => {
     const [range = "", kind = "", stack = ""] = meta.split(" · ").map((s) => s.trim());
-    return { name, href, range, kind, stack, summary: summary.trim(), ongoing: range.includes("至今") };
+    return {
+      name,
+      href,
+      range,
+      kind,
+      stack,
+      summary: summary.trim(),
+      ongoing: range.includes("至今"),
+      cover: covers.get(href) ?? null,
+    };
   });
 }

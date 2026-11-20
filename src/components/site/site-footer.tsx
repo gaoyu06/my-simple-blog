@@ -1,5 +1,7 @@
 import { Rss } from "lucide-react";
 
+import { GITHUB_URL } from "@/lib/links";
+
 export function SiteFooter({ siteName, footerText }: { siteName: string; footerText: string }) {
   return (
     <footer className="mt-24 border-t border-[var(--color-border)]">
@@ -8,10 +10,15 @@ export function SiteFooter({ siteName, footerText }: { siteName: string; footerT
           © {new Date().getFullYear()} {siteName}
           {footerText ? <span className="ml-3">{footerText}</span> : null}
         </p>
-        <a href="/rss.xml" className="inline-flex items-center gap-1.5 hover:text-[var(--color-foreground)]">
-          <Rss className="h-3.5 w-3.5" aria-hidden />
-          RSS
-        </a>
+        <div className="flex items-center gap-5">
+          <a href={GITHUB_URL} target="_blank" rel="noreferrer" className="hover:text-[var(--color-foreground)]">
+            GitHub
+          </a>
+          <a href="/rss.xml" className="inline-flex items-center gap-1.5 hover:text-[var(--color-foreground)]">
+            <Rss className="h-3.5 w-3.5" aria-hidden />
+            RSS
+          </a>
+        </div>
       </div>
     </footer>
   );
