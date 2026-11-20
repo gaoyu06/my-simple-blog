@@ -5,10 +5,12 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { getSiteMeta, getNavItems, getCustomCss } from "@/server/queries/site";
 import { isInitialized } from "@/lib/install-state";
 
-// Public pages are rendered once and refreshed whenever content changes
-// (every admin action calls revalidatePath("/", "layout")). The hourly
-// window only bounds drift such as view counts.
-export const revalidate = 3600;
+// Public pages are served from the ISR cache and refreshed whenever content
+// changes (every admin action calls revalidatePath("/", "layout")). The
+// 60-second window covers changes made outside the admin, such as direct
+// database writes and view counts. Regeneration runs in the background after
+// a stale hit, so a short window does not slow down page loads.
+export const revalidate = 60;
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   if (!(await isInitialized())) redirect("/setup");
