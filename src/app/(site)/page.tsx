@@ -6,6 +6,7 @@ import { WorkRows } from "@/components/home/work-rows";
 import { WorkTile } from "@/components/home/work-tile";
 import styles from "@/components/home/home.module.css";
 import { formatDate } from "@/lib/date";
+import { GITHUB_URL } from "@/lib/links";
 import { getSettings } from "@/lib/settings";
 import { SETTINGS } from "@/lib/settings-keys";
 import { countPublishedArticles, listPublishedArticles } from "@/server/queries/articles";
@@ -14,7 +15,6 @@ import { listWorks } from "@/server/queries/works";
 
 /** Works shown as large tiles, in this order; the rest go to the compact list. */
 const FEATURED = ["/fpsmaster", "/aicare", "/arcbench-agent"];
-const GITHUB = "https://github.com/SuperSkidder";
 const POST_COUNT = 7;
 
 export default async function HomePage() {
@@ -58,7 +58,7 @@ export default async function HomePage() {
             ) : null}
           </dl>
           <div className={styles.links}>
-            <a className={`${styles.btn} ${styles.btnPrimary}`} href={GITHUB} target="_blank" rel="noreferrer">
+            <a className={`${styles.btn} ${styles.btnPrimary}`} href={GITHUB_URL} target="_blank" rel="noreferrer">
               GitHub
             </a>
             <a className={styles.btn} href="/rss.xml">
