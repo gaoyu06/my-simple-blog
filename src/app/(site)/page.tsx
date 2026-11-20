@@ -30,7 +30,6 @@ export default async function HomePage() {
 
   const featured = FEATURED.map((href) => works.find((w) => w.href === href)).filter((w) => w !== undefined);
   const others = works.filter((w) => !featured.includes(w));
-  const ongoing = works.filter((w) => w.ongoing);
   const [lead, ...rest] = articles;
 
   return (
@@ -41,12 +40,6 @@ export default async function HomePage() {
           <h1>{fullName}</h1>
           {lede ? <p className={styles.lede}>{lede}</p> : null}
           <dl className={styles.now}>
-            {ongoing.length ? (
-              <>
-                <dt>在做</dt>
-                <dd>{ongoing.map((w) => w.name).join("、")}</dd>
-              </>
-            ) : null}
             {lead ? (
               <>
                 <dt>在写</dt>

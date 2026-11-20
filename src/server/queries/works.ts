@@ -10,7 +10,6 @@ export type Work = {
   kind: string;
   stack: string;
   summary: string;
-  ongoing: boolean;
   /** First image on the work's own page, used as its cover. */
   cover: string | null;
 };
@@ -42,7 +41,6 @@ export async function listWorks(): Promise<Work[]> {
       kind,
       stack,
       summary: summary.trim(),
-      ongoing: range.includes("至今"),
       cover: covers.get(href) ?? null,
     };
   });
