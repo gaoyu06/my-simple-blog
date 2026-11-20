@@ -69,6 +69,7 @@ export default async function ArticlePage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-[720px] px-4 pt-10 sm:px-6 sm:pt-14 xl:grid xl:max-w-[1240px] xl:grid-cols-[minmax(0,1fr)_720px_minmax(0,1fr)] xl:gap-14">
+      <div className="read-progress" aria-hidden />
       <div className="hidden xl:block" />
       <article className="min-w-0">
         <header className="mb-8">
