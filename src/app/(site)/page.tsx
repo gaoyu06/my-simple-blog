@@ -14,7 +14,7 @@ import { getSiteMeta } from "@/server/queries/site";
 import { listWorks } from "@/server/queries/works";
 
 /** Works shown as large tiles, in this order; the rest go to the compact list. */
-const FEATURED = ["/fpsmaster", "/aicare", "/arcbench-agent"];
+const FEATURED = ["/aicare", "/jucode", "/fpsmaster"];
 const POST_COUNT = 7;
 
 export default async function HomePage() {
