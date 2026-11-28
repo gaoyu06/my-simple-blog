@@ -25,8 +25,9 @@ const BLOCK = /^### \[(.+?)\]\((.+?)\)\s*\n<span[^>]*>(.+?)<\/span>(?:<br\s*\/?>
 
 const FIRST_IMAGE = /!\[[^\]]*\]\(([^)\s]+)/;
 
-export async function listWorks(): Promise<Work[]> {
-  const page = await getPageBySlug("works");
+/** `pageSlug` is "works" for Chinese and "en/works" for English. */
+export async function listWorks(pageSlug = "works"): Promise<Work[]> {
+  const page = await getPageBySlug(pageSlug);
   if (!page?.published) return [];
   const blocks = [...page.content.matchAll(BLOCK)];
   const slugs = blocks.map(([, , href]) => href.replace(/^\//, ""));

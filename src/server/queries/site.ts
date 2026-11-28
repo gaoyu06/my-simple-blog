@@ -59,3 +59,12 @@ export async function getCustomCss(): Promise<string> {
   const raw = await getSettings([SETTINGS.CUSTOM_CSS]);
   return (raw[SETTINGS.CUSTOM_CSS] as string) || "";
 }
+
+/** Published English page slugs, without the "en/" prefix. */
+export async function listEnglishSlugs(): Promise<string[]> {
+  const pages = await db.page.findMany({
+    where: { slug: { startsWith: "en/" }, published: true },
+    select: { slug: true },
+  });
+  return pages.map((p) => p.slug.slice(3));
+}

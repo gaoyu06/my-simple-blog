@@ -6,14 +6,14 @@ import { usePathname } from "next/navigation";
 export type NavLink = { label: string; href: string; external?: boolean };
 
 function isActive(pathname: string, href: string) {
-  if (href === "/") return pathname === "/";
+  if (href === "/" || href === "/en") return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function NavLinks({ items, className }: { items: NavLink[]; className?: string }) {
+export function NavLinks({ items, className, label = "主导航" }: { items: NavLink[]; className?: string; label?: string }) {
   const pathname = usePathname();
   return (
-    <nav aria-label="主导航" className={className}>
+    <nav aria-label={label} className={className}>
       {items.map((item) => {
         const active = !item.external && isActive(pathname, item.href);
         return (
