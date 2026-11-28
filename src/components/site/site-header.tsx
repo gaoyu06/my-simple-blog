@@ -2,17 +2,28 @@ import Link from "next/link";
 import { Search } from "lucide-react";
 
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { LangSwitch } from "@/components/site/lang-switch";
 import { NavLinks, type NavLink } from "@/components/site/nav-links";
 
-export function SiteHeader({ siteName, navItems }: { siteName: string; navItems: NavLink[] }) {
+type Props = {
+  siteName: string;
+  navItems: NavLink[];
+  lang?: "zh" | "en";
+  /** Published English page slugs, for the language link on Chinese pages. */
+  enSlugs?: readonly string[];
+};
+
+export function SiteHeader({ siteName, navItems, lang = "zh", enSlugs }: Props) {
+  const en = lang === "en";
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--color-border)] bg-[oklch(from_var(--color-canvas)_l_c_h/0.88)] backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-5xl items-center gap-8 px-4 sm:px-6">
-        <Link href="/" className="shrink-0 whitespace-nowrap text-[16px] font-semibold tracking-tight">
+        <Link href={en ? "/en" : "/"} className="shrink-0 whitespace-nowrap text-[16px] font-semibold tracking-tight">
           {siteName}
         </Link>
-        <NavLinks items={navItems} className="hidden items-center gap-6 md:flex" />
+        <NavLinks items={navItems} label={en ? "Main" : undefined} className="hidden items-center gap-6 md:flex" />
         <div className="ml-auto flex items-center gap-1">
+          {en ? null : (
           <Link
             href="/search"
             aria-label="搜索"
@@ -20,12 +31,15 @@ export function SiteHeader({ siteName, navItems }: { siteName: string; navItems:
           >
             <Search className="h-4 w-4" aria-hidden />
           </Link>
-          <ThemeToggle />
+          )}
+          <LangSwitch lang={lang} enSlugs={enSlugs} />
+          <ThemeToggle label={en ? "Toggle dark mode" : undefined} />
         </div>
       </div>
       {/* Phones: the same links in a scrollable row, one tap away. */}
       <NavLinks
         items={navItems}
+        label={en ? "Main" : undefined}
         className="no-scrollbar flex items-center gap-5 overflow-x-auto px-4 pb-2.5 md:hidden"
       />
     </header>
